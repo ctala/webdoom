@@ -20,3 +20,21 @@ is one `putImageData(480x270)` + a handful of 2D calls.
 Tests: 57 pasando (`node --test`).
 Frame time (bench CPU): idle-walk **0.138 ms/frame**; walking+spin **0.079 ms/frame**.
 Sin errores de consola en el run de tests.
+
+## Stage 2 — Texturas procedurales + floor/ceiling casting
+- Texturas 64x64 100% procedurales (ruido hash determinista, cero binarios):
+  brick / tech / stone / metal + 4 puertas (D, R, B, secret-brick) y 3 temas
+  de piso/techo. En el navegador se pintan vía Canvas2D offscreen
+  (putImageData) y se compilan a tablas de sombreado [texel][64 niveles]
+  (32 de brillo + 32 side-dim 28%).
+- Floor + ceiling casting horizontal por scanline (lodev), con la misma
+  base de cámara que el DDA: sin distorsión y sin z-buffer necesario
+  (las paredes se pintan después y cubren lo cercano).
+- Sectores de altura variable (1u/2u/3u) con offset vertical de proyección;
+  se corrigió una línea de escala en lineH (factor 1/2 extra) detectada con
+  test cuantitativo del borde superior de pared a distancia conocida.
+- Temas de nivel: cada level elige par {piso, techo}.
+
+Tests: 64 pasando (antes 57; +7 de texturas/alturas/fog).
+Frame time (bench CPU, escenario completo texturizado): walk **0.435 ms/frame**,
+walk+spin **0.385 ms/frame** (budget 16.66). Sin errores de consola.

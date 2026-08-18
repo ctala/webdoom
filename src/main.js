@@ -2,14 +2,16 @@
 // fixed 60Hz timestep with accumulator, render decoupled via rAF.
 
 import { Game } from './game/game.js';
-import { makeFlatAssets } from './gfx/assets.js';
+import { makeTables } from './gfx/textures.js';
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d', { alpha: false });
 ctx.imageSmoothingEnabled = false;
 const W = 480, H = 270;
 const img = new ImageData(W, H);
-const game = new Game(makeFlatAssets(), W, H, new Uint32Array(img.data.buffer), img);
+// Procedural textures (Canvas2D offscreen). First frame does the one-time
+// table build (~14 x 64x64 shade tables); later frames are allocation-free.
+const game = new Game(makeTables(document), W, H, new Uint32Array(img.data.buffer), img);
 
 // ---------------- input ----------------
 const input = game.input;

@@ -3,14 +3,14 @@
 // Numbers are CPU-only (V8) at 480x270; GPU cost in the browser is minimal
 // (one putImageData + a few 2D calls per frame).
 import { Game } from '../src/game/game.js';
+import { makeTables } from '../src/gfx/textures.js';
 import { makeFlatAssets } from '../src/gfx/assets.js';
 
-function bench(label, setup) {
+function bench(label, assets, setup) {
   const W = 480, H = 270;
-  const game = new Game(makeFlatAssets(), W, H, new Uint32Array(W * H));
+  const game = new Game(assets, W, H, new Uint32Array(W * H));
   if (setup) setup(game);
-  // warmup
-  for (let i = 0; i < 60; i++) game.tick(1 / 60);
+  for (let i = 0; i < 60; i++) game.tick(1 / 60); // warmup
   const N = 600;
   const t0 = performance.now();
   for (let i = 0; i < N; i++) {
@@ -19,17 +19,18 @@ function bench(label, setup) {
   }
   const ms = performance.now() - t0;
   const f = ms / N;
-  console.log(`${label.padEnd(34)} ${ms.toFixed(0).padStart(6)}ms total  ${f.toFixed(3)} ms/frame  ${Math.floor(1000 / f)} fps-headroom(60Hz)`);
+  console.log(`${label.padEnd(44)} ${ms.toFixed(0).padStart(6)}ms total  ${f.toFixed(3)} ms/frame  (budget 16.66)`);
   return f;
 }
 
-// walk east into the first wall
-let g1 = null;
-const p1 = bench('stage1: player idle-walk', (g) => { g.input.up = true; g1 = g; });
-// walk while spinning (DDA covers all directions)
-bench('stage1: walking + continuous spin', (g) => {
+const real = makeTables(null);
+const flat = makeFlatAssets();
+
+bench('stage1 flat walls, idle-walk', flat, (g) => { g.input.up = true; });
+bench('stage2 textured+floor/ceil, walk', real, (g) => { g.input.up = true; });
+bench('stage2 textured+floor/ceil, walk+spin', real, (g) => {
   g.input.up = true;
   const orig = g.tick.bind(g);
-  g.tick = (dt) => { orig(dt); g.turn(60); }; // 0.126 rad/frame
+  g.tick = (dt) => { orig(dt); g.turn(60); };
 });
-console.log(`\nfloor budget: 16.66 ms/frame for 60fps; stage1 uses ${p1.toFixed(3)} ms`);
+console.log('\nnote: CPU-only V8 timings; browser adds ~<0.5ms GPU blit for 480x270.');

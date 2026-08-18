@@ -11,6 +11,7 @@ export class Game {
   constructor(assets, W = 480, H = 270, targetBuf = null, imageData = null) {
     this.W = W;
     this.H = H;
+    this.assets = assets;
     this.renderer = new Renderer(assets, W, H, targetBuf);
     this.imageData = imageData;
     this.bg = makeFlatBg(W, H);
@@ -35,6 +36,12 @@ export class Game {
     this.explored = new Uint8Array(gw * gh);
     this.doorH = new Float32Array(gw * gh);
     this.stats.levelTime = 0;
+    // per-level theme: floor + ceiling tables
+    if (this.assets.floorTables) {
+      const th = this.assets.floorTables[(def.theme ?? 0) % this.assets.floorTables.length];
+      this.assets.floorTable = th.floor;
+      this.assets.ceilTable = th.ceil;
+    }
     this.state = 'PLAY';
     this.paused = false;
     this.rebuildView();

@@ -2,11 +2,12 @@
 // (Uint32Array view of ImageData.data, little-endian 0xAABBGGRR).
 //
 // World: eye at z=0, floor at z=-1, cell heights 1/2/3 units (H_LOW/NORM/TALL).
-// Perpendicular depth d -> pixels per unit = H/(2d). A wall of hF units at
-// depth d spans lineH = hF * H/(2d) px, anchored to the floor line
-// yBot = H/2 + H/(2d); its top yTop = yBot - lineH. A 1-unit (low) wall tops
-// out exactly at the horizon, exposing floor/ceiling of the far cells behind
-// it — variable-height sectors via vertical projection offset.
+// Perpendicular depth d -> pixels per unit = H/(2d). A wall of hU world
+// units (1/2/3) at depth d spans lineH = hU * H/(2d) px, anchored to the
+// floor line yBot = H/2 + H/(2d); its top yTop = yBot - lineH. A 1-unit
+// (low) wall tops out exactly at the horizon, exposing floor/ceiling of
+// cells seen over it; a 3-unit wall tops out above the horizon —
+// variable-height sectors via vertical projection offset.
 //
 // Draw order: floor/ceiling pass, then walls per column (walls overwrite),
 // then sprites (z-tested against this.depth). No depth test is needed for
@@ -68,15 +69,14 @@ export class Renderer {
       const id = ray.hitId;
       let d = ray.perp < 0.04 ? 0.04 : ray.perp;
       depth[x] = d;
-      let hF = heights[idx] * 0.5; // world units
-      if (id >= 8) { // door sliding up
-        const open = doorH[idx];
-        hF *= 1 - open;
-        if (hF < 0.03) continue;
+      let hU = heights[idx]; // world units (1/2/3)
+      if (id >= 8) {         // door sliding up
+        hU *= 1 - doorH[idx];
+        if (hU < 0.06) continue;
       }
       const tbl = wallTable[id];
       if (!tbl) { continue; }
-      const lineH = (hF * H) / (2 * d);
+      const lineH = (hU * H) / (2 * d); // px/unit = H/(2d)
       const yBot = halfH + halfH / d;
       const yTop = yBot - lineH;
       const step = 64 / lineH; // texels per screen row
