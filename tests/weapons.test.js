@@ -230,7 +230,8 @@ test('decals reset on level reload', () => {
 test('blood particles: spawn, fall, expire and render onto the buffer', () => {
   const g = makeGame(ROOM);
   const e = g.enemies[0];
-  g.spawnBlood(e.x, e.y, 14, 0, 4);
+  // offset sideways so clots project off the exact aim column (reticle sits there)
+  g.spawnBlood(e.x, e.y + 0.5, 14, 0, 4);
   let alive = 0;
   g.particles.each((q) => { if (q.active) alive++; });
   assert.equal(alive, 14);
@@ -245,6 +246,15 @@ test('blood particles: spawn, fall, expire and render onto the buffer', () => {
   g.particles.each((q) => { if (q.active) alive++; });
   assert.equal(alive, 0, 'particles expired');
 });
+
+const hasFlash = (snap) => {
+  let n = 0;
+  for (let i = 0; i < snap.length; i++) {
+    const r = snap[i] & 0xff, gg = (snap[i] >> 8) & 0xff;
+    if (r > 230 && gg > 200) n++; // warm muzzle-flash whites/yellows
+  }
+  return n;
+};
 
 test('wall u/v sampling: columns differ along a brick face (stage4 fix + decal anchor)', () => {
   const rows = [
@@ -301,6 +311,71 @@ test('viewmodel renders over the buffer (non-zero weapon pixels at bottom center
   let diff = 0;
   for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) diff++;
   assert.ok(diff > 100, 'different weapon renders a different viewmodel: ' + diff + ' px differ');
+});
+
+test('reticle drawn at the exact screen center (the aim point)', () => {
+  const g = makeGame(ROOM);
+  g.render(null);
+  const buf = g.renderer.buf;
+  const cx = W >> 1, cy = H >> 1;
+  const C = ((0xff << 24) | (0x20 << 16) | (0xff << 8) | 0x50) >>> 0; // bright green, unsigned
+  const at = (x, y) => (buf[y * W + x] >>> 0) === C;
+  assert.ok(at(cx, cy), 'center pixel');
+  assert.ok(at(cx + 1, cy) && at(cx - 1, cy), 'inner arms');
+  assert.ok(at(cx + 3, cy) && at(cx - 3, cy) && at(cx, cy + 3) && at(cx, cy - 3), 'outer arms');
+  assert.ok(!at(cx + 2, cy), 'gap between arms (crosshair look)');
+  g.state = 'DEAD'; g.render(null);
+  assert.ok(!at(cx, cy), 'reticle hidden when dead');
+});
+
+test('weapon switch looks neutral: no fire frame, no ammo, no shot', () => {
+  const g = makeGame(ROOM);
+  const p = g.player;
+  const snap = () => {
+    const out = new Uint32Array(200 * 90);
+    for (let y = H - 90; y < H; y++) for (let x = 170; x < 370; x++) out[(y - (H - 90)) * 200 + (x - 170)] = g.renderer.buf[y * W + x];
+    return out;
+  };
+  const diff = (a, b) => {
+    let n = 0;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) n++;
+    return n;
+  };
+  p.switchT = 0; p.swingT = 0;
+  g.switchWeapon(3); p.switchT = 0; // shotgun at rest
+  p.switchT = 0;
+  g.render(null);
+  const atRest = snap();
+  const ammoPl0 = p.ammoPl;
+  // switch to plasma: must not fire (no shot, no ammo, no fire frame)
+  g.switchWeapon(4);
+  assert.equal(p.swingT, 0, 'switch does not arm the fire swing');
+  assert.equal(p.ammoPl, ammoPl0, 'switching consumes nothing');
+  assert.ok(p.switchT > 0, 'switch anim armed');
+  g.render(null);
+  const midSwitch = snap(); // plasma, dropped 10px, IDLE frame
+  g.tick(1 / 60);
+  assert.equal(p.swingT, 0);
+  g.render(null);
+  const settled = snap();
+  // the switch pose must NOT carry the muzzle-flash; a real fire frame does
+  p.swingT = 0.18;
+  g.render(null);
+  const firePose = snap();
+  p.swingT = 0;
+  assert.ok(hasFlash(firePose) - hasFlash(midSwitch) > 60, 'fire pose carries the muzzle flash; switch pose does not (idle core only)');
+  assert.ok(hasFlash(settled) - hasFlash(midSwitch) < 40, 'mid-switch and settled show the same idle core (drop anim only)');
+  assert.ok(diff(midSwitch, settled) < 8000, 'mid-switch differs from settled only by the drop animation');
+});
+
+test('AIM is honored: a centered enemy on the aim ray is hit by plasma', () => {
+  const g = makeGame(ROOM); // player (1.5,3.5) ang=0 -> aim ray is y=3.5
+  let n0 = g.enemyCount;
+  const e = g.enemies[n0++] = { type: 'imp', x: 6.5, y: 3.5, hp: 60, maxHp: 60, state: ST.CHASE }; // dead on the aim ray
+  g.enemyCount = n0;
+  g.switchWeapon(4);
+  shot(g, 70); // bolt travels ~5u
+  assert.ok(e.hp <= 0 || e.hp < 60, `centered bolt damaged the enemy on the aim ray (hp ${e.hp})`);
 });
 
 test('determinism: identical seed -> identical damage sequence', () => {

@@ -31,7 +31,7 @@ export function switchWeapon(game, id) {
   if (!def || p.weapon === id) return;
   p.weapon = id;
   p.latch = false;
-  p.swingT = 0.22;
+  p.switchT = 0.16; // drop-and-rise animation (NOT the fire swing: must look neutral)
   game.setMessage(def.name);
   game.sfx('switch');
 }
@@ -41,6 +41,7 @@ export function updateWeapons(game, dt) {
   const p = game.player;
   if (p.wpnCd > 0) p.wpnCd -= dt;
   if (p.swingT > 0) p.swingT -= dt;
+  if (p.switchT > 0) p.switchT -= dt;
   if (!game.input.fire) { p.latch = false; return; }
   const def = WEAPON_DEF[p.weapon];
   if (p.wpnCd > 0 || (def.melee && p.latch)) return;

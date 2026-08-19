@@ -58,22 +58,27 @@ function noise(dur, vol, freq, t0 = 0, q = 1) {
 
 const T = 0.001;
 
+// Every entry receives t0 = actx.currentTime (+epsilon) so nodes are
+// scheduled relative to the clock that is actually running. Scheduling on a
+// fixed absolute time (0.001) lands in the past once the context has been
+// running for a while, and WebAudio drops those nodes silently.
 export const SFX_BANK = {
-  pistol: () => { noise(0.10, 0.5, 2600); tone('square', 160, 50, T, 0.10, 0.25); },
-  shotgun: () => { noise(0.22, 0.7, 1400); tone('square', 110, 35, T, 0.22, 0.4); },
-  plasma: () => { tone('sawtooth', 980, 240, T, 0.16, 0.22); tone('sine', 1400, 500, T, 0.09, 0.12); },
-  punch: () => { noise(0.07, 0.4, 500); tone('sine', 90, 45, T, 0.08, 0.3); },
-  hit: () => { tone('sawtooth', 300, 140, T, 0.12, 0.2); noise(0.06, 0.3, 900); },
-  hurt: () => { tone('square', 130, 60, T, 0.18, 0.35); },
-  edead: () => { tone('sawtooth', 220, 40, T, 0.5, 0.3); noise(0.3, 0.25, 700); },
-  eshoot: () => { tone('sawtooth', 500, 180, T, 0.25, 0.12); },
-  switch: () => { tone('square', 700, 500, T, 0.05, 0.15); tone('square', 900, 700, T + 0.07, 0.05, 0.15); },
-  door: () => { noise(0.5, 0.4, 300); },
-  pickup: () => { tone('sine', 660, 990, T, 0.12, 0.2); },
+  pistol: (t0) => { noise(0.10, 0.5, 2600, t0); tone('square', 160, 50, t0, 0.10, 0.25); },
+  shotgun: (t0) => { noise(0.22, 0.7, 1400, t0); tone('square', 110, 35, t0, 0.22, 0.4); },
+  plasma: (t0) => { tone('sawtooth', 980, 240, t0, 0.16, 0.22); tone('sine', 1400, 500, t0, 0.09, 0.12); },
+  punch: (t0) => { noise(0.07, 0.4, 500, t0); tone('sine', 90, 45, t0, 0.08, 0.3); },
+  hit: (t0) => { tone('sawtooth', 300, 140, t0, 0.12, 0.2); noise(0.06, 0.3, 900, t0); },
+  hurt: (t0) => { tone('square', 130, 60, t0, 0.18, 0.35); },
+  edead: (t0) => { tone('sawtooth', 220, 40, t0, 0.5, 0.3); noise(0.3, 0.25, 700, t0); },
+  eshoot: (t0) => { tone('sawtooth', 500, 180, t0, 0.25, 0.12); },
+  switch: (t0) => { tone('square', 700, 500, t0, 0.05, 0.15); tone('square', 900, 700, t0 + 0.07, 0.05, 0.15); },
+  door: (t0) => { noise(0.5, 0.4, 300, t0); },
+  pickup: (t0) => { tone('sine', 660, 990, t0, 0.12, 0.2); },
 };
 
 /** Play one sfx by name; silent when no running context exists. */
 export function playSfx(name) {
   const f = SFX_BANK[name];
-  if (f && actx && actx.state === 'running') f();
+  if (!f || !actx || actx.state !== 'running') return;
+  f(actx.currentTime + 0.01);
 }

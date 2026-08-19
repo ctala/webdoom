@@ -74,6 +74,7 @@ export class Game {
     this.player.flash = 0;
     this.player.wpnCd = 0;
     this.player.swingT = 0;
+    this.player.switchT = 0;
     this.player.latch = false;
     this.view = new Uint8Array(gw * gh);
     this.explored = new Uint8Array(gw * gh);
@@ -293,6 +294,7 @@ export class Game {
     this.renderSprites();
     renderParticles(this);
     this.renderViewmodel();
+    this.renderReticle();
     if (ctx && this.imageData) ctx.putImageData(this.imageData, 0, 0);
   }
 
@@ -327,6 +329,21 @@ export class Game {
     sr.render(this.renderer.buf, this.renderer.depth, this.W, this.H);
   }
 
+  /** Firing reticle: the exact spot the center of the screen (and the
+   *  center pellet/bolt) hits. Full HUD/crosshair options arrive in stage 6. */
+  renderReticle() {
+    if (this.state !== 'PLAY') return;
+    const { W, H } = this;
+    const buf = this.renderer.buf;
+    const cx = W >> 1, cy = H >> 1;
+    // 0xAABBGGRR: bright green (R 0x50, G 0xff, B 0x20)
+    const c = (0xff << 24) | (0x20 << 16) | (0xff << 8) | 0x50;
+    for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [3, 0], [-3, 0], [0, 1], [0, -1], [0, 3], [0, -3]]) {
+      const x = cx + dx, y = cy + dy;
+      if (x >= 0 && x < W && y >= 0 && y < H) buf[y * W + x] = c;
+    }
+  }
+
   /** First-person weapon viewmodel, bottom-center with walk bob. */
   renderViewmodel() {
     const p = this.player;
@@ -339,8 +356,9 @@ export class Game {
     const buf = this.renderer.buf;
     const w = W * 0.36;
     const h = w * (ws.h / ws.w);
+    const drop = p.switchT > 0 ? (p.switchT / 0.16) * 10 : 0; // switch anim: rise into place
     const bx = W * 0.5 + W * 0.09 + Math.cos(p.bob) * 3 - w * 0.5; // left edge
-    const by = H - h + Math.sin(p.bob) * 2 + (fire ? -4 : 0);
+    const by = H - h + drop + Math.sin(p.bob) * 2 + (fire ? -4 : 0);
     const x0 = Math.max(0, bx | 0);
     const x1 = Math.min(W - 1, (bx + w) | 0);
     const y0 = Math.max(0, by | 0);

@@ -165,3 +165,35 @@ Soak combate en navegador real: imp matado (kills=1, cadáver), sangre
 dibujada a mitad de la pelea, el jugador muere al fireball de vuelta
 (death screen), 0 errores de consola; bindings 1-4 por eventos reales;
 sweep QA CLEAN.
+
+### Etapa 4 — Pulidos (QA de sesión jugador)
+- **Audio: sfx en silencio (bug real)**. La música usaba el reloj vivo del
+  AudioContext (`currentTime`), pero el banco de sfx agendaba nodos en
+  tiempo absoluto `t0 = 0.001`: pasado ~1s de música, esos nodos caían en
+  el pasado y WebAudio los descartaba en silencio. Fix: cada entrada del
+  banco recibe `t0 = actx.currentTime + 0.01` (`playSfx` lo inyecta).
+  Confirmado por el jugador: ahora suena todo.
+- **Cambio de arma parecía un disparo** (solo visual). `switchWeapon`
+  armaba `swingT` (el temporizador del frame de fuego: muzzle-flash +
+  retroceso). Ahora arma `switchT` (0.16s): el viewmodel baja ~10px y
+  sube al sitio (animación de cambio neutra). Verificado por test con
+  discriminador de flash cálido: el frame mid-switch NO lleva muzzle-flash
+  y no consume munición ni dispara nada.
+- **Reticle (AIM que se cumple)**: cross verde de 7px en el exacto centro
+  de pantalla — donde aterriza el pellet/bolte central — dibujado por
+  encima de todo (solo en PLAY; 9 px). Sin dashboard a esta altura: HUD
+  completo es etapa 6.
+- **Sweep QA: 404 de fondo de Chrome**. El navegador (favicon/updater)
+  genera 404s sin ninguna petición de la página; el gate los contaba y
+  fallaba de forma flaky. Now: se ignoran 404s cuya URL no es nuestro
+  origen (127.0.0.1:8000); un módulo roto del juego sigue fallando el
+  sweep por el chequeo `?debug handle missing`.
+- Tests: 100 pasando (+3: reticle en el centro del buffer, cambio de arma
+  neutro, AIM central cumplido por el plasma). Sweep CLEAN en 2/2
+  ejecuciones; frame QA `_qa/l_reticle.png`.
+
+### Backlog (visual, reportado por el jugador — sin bloquear)
+- **Puños**: (a) el frame de golpe dibuja una banda de brazo ancha
+  (`paintFist` t===1: filas 10-74 del sprite) y "se ilumina todo" — debería
+  ser un swing compacto de un puño; (b) no se intercalan manos izquierda/
+  derecha — agregar paridad por swing (`punchParity`) con frame espejado.

@@ -18,7 +18,7 @@ export function createPlayer(x, y, ang = 0) {
     bob: 0, moved: false, running: false,
     faceHurt: 0, faceDir: 0, // HUD face: hurt level 0..3, dir -1..1
     flash: 0, // muzzle flash light 0..1 (decays in game tick)
-    wpnCd: 0, swingT: 0, latch: false, // weapon cooldown / viewmodel swing / melee latch
+    wpnCd: 0, swingT: 0, switchT: 0, latch: false, // cooldown / swing / switch anim / melee latch
   };
 }
 

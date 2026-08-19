@@ -79,7 +79,18 @@ ws.onmessage = (ev) => {
   } else if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') {
     errs.push(`[console.error] ${m.params.args.map((a) => a.value ?? a.description ?? '').join(' ')}`);
   } else if (m.method === 'Log.entryAdded' && m.params.entry.level === 'error') {
-    errs.push(`[log.error] ${m.params.entry.text}`);
+    const e = m.params.entry;
+    const u = e.url || '';
+    // Chrome's own background jobs (favicon/updater probes) can 404 without any
+    // page request; those are environment noise. A broken game module still
+    // fails the sweep via the `?debug handle missing` check below.
+    if (/404/.test(e.text) && !u.includes('127.0.0.1:8000')) {
+      process.stderr.write('[log.skip] ' + (u || '(no url)') + ' :: ' + e.text + '\n');
+      return;
+    }
+    errs.push(`[log.error] url="${u}" src=${e.source} :: ${e.text}`);
+  } else if (m.method === 'Network.responseReceived' && m.params.response.status >= 400) {
+    process.stderr.write('[net4xx] ' + m.params.response.status + ' ' + m.params.response.url + '\n');
   }
 };
 const send = (method, params = {}) => new Promise((res) => { const i = ++id; pend.set(i, res); ws.send(JSON.stringify({ id: i, method, params })); });
