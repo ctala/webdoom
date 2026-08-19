@@ -70,17 +70,33 @@ window.addEventListener('mouseup', (e) => {
 window.addEventListener('mousemove', (e) => {
   if (locked()) game.turn(e.movementX);
 });
+function tryLock() {
+  // Chrome rejects a re-lock within ~1.25s after an ESC exit: don't let that
+  // rejection show up in the on-page error log.
+  const p = canvas.requestPointerLock();
+  if (p && typeof p.catch === 'function') p.catch(() => {});
+}
 document.addEventListener('pointerlockchange', () => {
-  if (!locked() && game.state === 'PLAY' && !game.paused) {
+  if (game.state !== 'PLAY') return;
+  if (!locked()) {
     // ESC releases the lock; treat unlock as pause.
-    game.paused = true;
-    input.fire = false; input.up = input.down = input.left = input.right = input.run = false;
+    if (!game.paused) {
+      game.paused = true;
+      input.fire = false; input.up = input.down = input.left = input.right = input.run = false;
+    }
+  } else if (game.paused) {
+    game.paused = false;
   }
 });
 window.addEventListener('keydown', (e) => {
-  if (e.code === 'Escape' && game.state === 'PLAY' && game.paused) {
+  if (e.code !== 'Escape' || game.state !== 'PLAY') return;
+  if (locked()) return; // ESC-exit is handled by pointerlockchange (pauses)
+  if (game.paused) {
     game.paused = false;
-    if (!locked()) canvas.requestPointerLock();
+    tryLock();
+  } else {
+    game.paused = true;
+    input.fire = false; input.up = input.down = input.left = input.right = input.run = false;
   }
 });
 window.addEventListener('blur', () => {
