@@ -133,3 +133,35 @@ Tests: 81 pasando. QA-sweep: CLEAN (0 errores).
   últimas). Invisible si no hay nada; permite depurar desde la máquina del
   jugador sin devtools. Verificado con errores reales inyectados.
 - Tests: 82 pasando (+1: respawn tras muerte).
+
+### Etapa 4: armas, sangre, viewmodel y audio
+Cuatro armas jugables (teclas 1-4 / rueda del ratón; disparo: ratón o espacio):
+- **Puños** (melee arco 31°, 1.3u), **Pistola** (hitscan, 10-30 dmg, 50 balas),
+  **Escopeta** (hitscan 8 perdigones, dispersión ±3.4°, 8 cartuchos),
+  **Plasma** (proyectil + splash r1.6, 9 dmg AoE, 20 celdas).
+  Agotadas -> auto-fallback (escopeta/plasma->pistola->puños) con mensaje.
+- `src/game/weapons.js` (definiciones + lógica pura), `src/game/particles.js`
+  (pool 128 de partículas de sangre: gravedad, proyección a pantalla,
+  depth-test por píxel), `src/gfx/weaponSprites.js` (4 viewmodels
+  procedurales 128x80, idle/fire), `src/audio/sfx.js` (11 sfx WebAudio
+  100% sintetizados, sin assets; no-op sin AudioContext) y
+  `src/audio/music.js` (bucle bass+arp generativo con reloj del
+  AudioContext). Audio se desbloquea con el primer gesto (click/tecla).
+- **Decals persistentes en paredes** (sangre/quemadura): pool 128 +
+  cabezas por (celda, cara); el plasma al muro re-rayeasta la cara exacta
+  (side + texX); coalescencia por spot y tope de 16 por cara (el renderer
+  recorre la cadena por píxel — el bench lo exigía: 3.9 -> 1.2 ms/frame).
+- **Bug de render de muros detectado en ruta**: las columnas muestreaban
+  SIEMPRE la columna-0 de la textura más un desplazamiento vertical de
+  `64*texX` (cizallado por celda): los muros eran bandas, no ladrillos.
+  Fix en `renderer.render`: `u` = columna de textura por slice, `v` = fila
+  desde el tope del slice (índice `((v<<6)+u)<<6|lvl`, como los suelos).
+  Verificado por test (variedad de columnas en una cara + decal en la
+  posición esperada) y a ojo en frame.
+
+Tests: 97 pasando (+15: weapons). Bench: stage4 combate pistola
+0.48 ms/frame; plasma 1.23 ms/frame (presupuesto 16.66).
+Soak combate en navegador real: imp matado (kills=1, cadáver), sangre
+dibujada a mitad de la pelea, el jugador muere al fireball de vuelta
+(death screen), 0 errores de consola; bindings 1-4 por eventos reales;
+sweep QA CLEAN.

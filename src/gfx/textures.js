@@ -232,6 +232,18 @@ export function shadeTable(rgba) {
   return t;
 }
 
+/** 64-level shade table for a single flat color (wall decals: blood / burn). */
+export function flatRowShades(r, g, b) {
+  const t = new Uint32Array(64);
+  for (let L = 0; L < 64; L++) {
+    const base = L < 32 ? L : L - 32;
+    let f = Math.pow(base / 31, 1.18);
+    if (L >= 32) f *= 0.72;
+    t[L] = (0xff << 24) | (((b * f) | 0) << 16) | (((g * f) | 0) << 8) | ((r * f) | 0);
+  }
+  return t;
+}
+
 /**
  * Build the full asset set. In the browser, pixels go through a Canvas2D
  * offscreen canvas (putImageData); with document=null the same generators
@@ -274,5 +286,7 @@ export function makeTables(document) {
     floorTables,
     floorTable: floorTables[0].floor,
     ceilTable: floorTables[0].ceil,
+    decalBlood: flatRowShades(148, 14, 14),
+    decalBurn: flatRowShades(52, 44, 34),
   };
 }

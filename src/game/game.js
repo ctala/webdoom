@@ -12,9 +12,16 @@ import { lightLevel, damageFalloff } from '../engine/light.js';
 import { createPlayer, updatePlayer } from './player.js';
 import { setupEnemies, updateEnemies, damageEnemy, ENEMY_DEF, ENEMY_MAX } from './enemy.js';
 import { updateProjectiles } from './projectiles.js';
+import { updateWeapons, switchWeapon } from './weapons.js';
+import { makeBlood, updateParticles, renderParticles, spawnBlood, BLOOD_MAX } from './particles.js';
 import { buildSprites, buildGlowSprites } from '../gfx/sprites.js';
+import { buildWeaponSprites } from '../gfx/weaponSprites.js';
 import { makeFlatBg } from '../gfx/assets.js';
+import { castRay } from '../engine/raycaster.js';
 import { E1M1 } from '../../levels/e1m1.js';
+
+export const DEC_MAX = 128;
+const _decRay = { perp: 0, side: 0, cellX: 0, cellY: 0, hitId: 0, texX: 0 };
 
 export class Game {
   constructor(assets, W = 480, H = 270, targetBuf = null, imageData = null) {
@@ -35,7 +42,18 @@ export class Game {
     this.enemies = new Array(ENEMY_MAX);
     for (let i = 0; i < ENEMY_MAX; i++) this.enemies[i] = {};
     this.enemyCount = 0;
-    this.projectiles = new Pool(32, () => ({ x: 0, y: 0, vx: 0, vy: 0, active: false, kind: 'fire', dmg: 10, life: 0, owner: 0 }));
+    this.projectiles = new Pool(32, () => ({ x: 0, y: 0, vx: 0, vy: 0, active: false, kind: 'fire', dmg: 10, life: 0, owner: 0, splash: 0, splashDmg: 0 }));
+    this.viewModels = buildWeaponSprites(typeof document !== 'undefined' ? document : null);
+    makeBlood(this);
+    // wall decals: per-level head list (cell,0/1 sides) + fixed item pool
+    this.decalItems = new Array(DEC_MAX);
+    for (let i = 0; i < DEC_MAX; i++) {
+      this.decalItems[i] = { active: false, cell: 0, side: 0, u: 0.5, v: 0.5, u64: 32, v64: 32, r: 3, kind: 1, next: 0 };
+    }
+    this.decalNext = new Int32Array(DEC_MAX);
+    this.decalHead = new Int32Array(2);
+    this.rng = 0x1234abcd;
+    this.sfx = () => {}; // main.js points this at WebAudio
     this.sound = new Array(32);
     for (let i = 0; i < 32; i++) this.sound[i] = { x: 0, y: 0, vol: 0 };
     this.soundLen = 0;
@@ -54,10 +72,21 @@ export class Game {
     const { gw, gh } = this.map;
     this.player = createPlayer(this.map.player.x, this.map.player.y, def.startAng || 0);
     this.player.flash = 0;
+    this.player.wpnCd = 0;
+    this.player.swingT = 0;
+    this.player.latch = false;
     this.view = new Uint8Array(gw * gh);
     this.explored = new Uint8Array(gw * gh);
     this.doorH = new Float32Array(gw * gh);
     this.map.doorH = this.doorH; // renderer reads door height through the map
+    // wall decals: reset the per-level head lists + expose to the renderer
+    this.decalHead = new Int32Array(gw * gh * 2).fill(-1);
+    for (const it of this.decalItems) it.active = false;
+    this.map.decals = {
+      head: this.decalHead, next: this.decalNext, items: this.decalItems,
+      blood: this.assets.decalBlood || null, burn: this.assets.decalBurn || null,
+    };
+    this.rng = 0x1234abcd;
     this.stats.levelTime = 0;
     this.setupLevelEntities();
     // per-level theme: floor + ceiling tables
@@ -102,12 +131,82 @@ export class Game {
     this.player.ang -= mx * 0.0021;
   }
 
+  /** Weapon switch (keys 1-4 / wheel); message feedback before HUD. */
+  switchWeapon(id) {
+    switchWeapon(this, id);
+  }
+
+  spawnBlood(x, y, n, dirAng, power) {
+    spawnBlood(this, x, y, n, dirAng, power);
+  }
+
+  /** Persist one decal on a wall face (kind: 0 blood, 1 burn). */
+  addDecal(cell, side, u, kind = 1, r = 3) {
+    const hU = this.map.heights[cell] || 2;
+    let v = (hU - 1) / hU;
+    if (v < 0.25) v = 0.25;
+    if (v > 0.75) v = 0.75;
+    const R = () => ((this.rng = (Math.imul(this.rng | 0, 1103515245) + 12345) | 0) >>> 8) / 16777216;
+    u = (u + (R() - 0.5) * 0.08) % 1;
+    if (u < 0) u += 1;
+    v += (R() - 0.5) * 0.12;
+    if (v < 0.05) v = 0.05;
+    if (v > 0.95) v = 0.95;
+    const hi = cell * 2 + side;
+    // Coalesce + saturate: the renderer walks the per-face chain per pixel,
+    // so a face keeps at most 16 decals and near-duplicate splats add nothing.
+    let count = 0;
+    for (let di = this.decalHead[hi]; di >= 0; di = this.decalNext[di]) {
+      count++;
+      const it = this.decalItems[di];
+      if (it.kind === kind && Math.abs(it.u64 - u * 64) < r && Math.abs(it.v64 - v * 64) < r) return;
+      if (count >= 16) return;
+    }
+    let di = -1;
+    for (let i = 0; i < DEC_MAX; i++) if (!this.decalItems[i].active) { di = i; break; }
+    if (di < 0) return; // pool full: skip (128 is plenty per level)
+    const it = this.decalItems[di];
+    it.active = true;
+    it.cell = cell;
+    it.side = side;
+    it.u = u;
+    it.v = v;
+    it.u64 = u * 64;
+    it.v64 = v * 64;
+    it.r = r;
+    it.kind = kind;
+    it.next = this.decalHead[hi];
+    this.decalNext[di] = it.next;
+    this.decalHead[hi] = di;
+  }
+
+  /** Short re-raycast from just behind the impact point to find the exact wall face. */
+  addSplatDecalAt(pr) {
+    const { gw, gh } = this.map;
+    const dl = Math.hypot(pr.vx, pr.vy) || 1;
+    const bx = pr.vx / dl, by = pr.vy / dl;
+    // pull the origin back into the last open cell, then cast forward again:
+    // the first solid cell hit is the wall, with the exact face side + texX
+    const ox = pr.x - bx * 0.2, oy = pr.y - by * 0.2;
+    if (this.view[Math.floor(oy) * gw + Math.floor(ox)]) {
+      this.addDecal(Math.floor(oy) * gw + Math.floor(ox), Math.abs(pr.vx) >= Math.abs(pr.vy) ? 0 : 1, Math.abs(pr.vx) >= Math.abs(pr.vy) ? pr.y % 1 : pr.x % 1, 1, 3);
+      return;
+    }
+    if (castRay(ox, oy, bx, by, this.view, gw, gh, _decRay)) {
+      if (_decRay.perp < 1.5) {
+        this.addDecal(_decRay.cellY * gw + _decRay.cellX, _decRay.side, _decRay.texX);
+      }
+    }
+  }
+
   tick(dt) {
     if (this.state !== 'PLAY' || this.paused) return;
     const p = this.player;
     this.stats.levelTime += dt;
     updatePlayer(p, this.input, dt, this.view, this.map);
+    updateWeapons(this, dt);
     updateProjectiles(this, dt);
+    updateParticles(this, dt);
     if (p.flash > 0) p.flash = Math.max(0, p.flash - dt * 5);
     if (this.state === 'PLAY') updateEnemies(this, dt);
     this.soundLen = 0; // sounds consumed by enemies this tick; clear last
@@ -137,6 +236,7 @@ export class Game {
     p.faceHurt = p.hp > 70 ? 1 : p.hp > 45 ? 2 : p.hp > 20 ? 3 : 4;
     p.faceDir = Math.abs(rel) < Math.PI * 0.75 ? (rel > 0 ? 1 : -1) : 0;
     this.emitSound(p.x, p.y, 8);
+    this.sfx('hurt');
     if (p.hp <= 0) {
       this.state = 'DEAD';
       this.setMessage('YOU DIED');
@@ -151,12 +251,33 @@ export class Game {
 
   onProjectileWall(pr) {
     this.emitSound(pr.x, pr.y, 2.5); // wall splat sound
+    if (pr.owner === 1 && pr.kind === 'plasma') this.addSplatDecalAt(pr);
+    else if (pr.owner === 0 && pr.kind === 'fire') {
+      const { gw } = this.map;
+      const cx = Math.floor(Math.max(0, Math.min(gw - 1, pr.x)));
+      const cy = Math.floor(Math.max(0, Math.min(this.map.gh - 1, pr.y)));
+      const cell = cy * gw + cx;
+      if (this.map.solid[cell]) this.addDecal(cell, Math.abs(pr.vx) >= Math.abs(pr.vy) ? 0 : 1, Math.abs(pr.vx) >= Math.abs(pr.vy) ? pr.y % 1 : pr.x % 1, 1, 2);
+    }
   }
 
   onProjectileHitEnemy(pr, e) {
     if (pr.dmg) {
       damageEnemy(this, e, pr.dmg);
+      this.spawnBlood(e.x, e.y, 8, Math.atan2(-pr.vy, -pr.vx), Math.hypot(pr.vx, pr.vy) * 0.5);
       this.emitSound(e.x, e.y, 3);
+    }
+    if (pr.splash) {
+      // plasma area damage around the impact point
+      for (let i = 0; i < this.enemyCount; i++) {
+        const e2 = this.enemies[i];
+        if (e2 === e || e2.state === 5 || e2.state === 6) continue;
+        const dx = e2.x - pr.x, dy = e2.y - pr.y;
+        if (dx * dx + dy * dy < pr.splash * pr.splash) {
+          damageEnemy(this, e2, pr.splashDmg);
+          this.spawnBlood(e2.x, e2.y, 4, Math.atan2(dy, dx), 3);
+        }
+      }
     }
     pr.dmg = 0; // consumed
   }
@@ -170,6 +291,8 @@ export class Game {
       this.state === 'PLAY' ? this.explored : null
     );
     this.renderSprites();
+    renderParticles(this);
+    this.renderViewmodel();
     if (ctx && this.imageData) ctx.putImageData(this.imageData, 0, 0);
   }
 
@@ -202,5 +325,37 @@ export class Game {
       sr.add(pr.x, pr.y, 0.28, g2.tab, g2.w, g2.h, 0.25, 31);
     });
     sr.render(this.renderer.buf, this.renderer.depth, this.W, this.H);
+  }
+
+  /** First-person weapon viewmodel, bottom-center with walk bob. */
+  renderViewmodel() {
+    const p = this.player;
+    const ws = this.viewModels[p.weapon];
+    if (!ws) return;
+    const fire = p.swingT > 0 && this.state === 'PLAY';
+    const tab = (fire ? ws.fire[0] : ws.idle[0]) || ws.idle[0];
+    if (!tab) return;
+    const { W, H } = this;
+    const buf = this.renderer.buf;
+    const w = W * 0.36;
+    const h = w * (ws.h / ws.w);
+    const bx = W * 0.5 + W * 0.09 + Math.cos(p.bob) * 3 - w * 0.5; // left edge
+    const by = H - h + Math.sin(p.bob) * 2 + (fire ? -4 : 0);
+    const x0 = Math.max(0, bx | 0);
+    const x1 = Math.min(W - 1, (bx + w) | 0);
+    const y0 = Math.max(0, by | 0);
+    const y1 = Math.min(H - 1, (by + h) | 0);
+    const pxw = ws.w / w;
+    const pxh = ws.h / h;
+    for (let x = x0; x <= x1; x++) {
+      let u = ((x - bx) * pxw) | 0;
+      if (u < 0) u = 0; else if (u >= ws.w) u = ws.w - 1;
+      for (let y = y0; y <= y1; y++) {
+        let v = ((y - by) * pxh) | 0;
+        if (v < 0) v = 0; else if (v >= ws.h) v = ws.h - 1;
+        const c = tab[v * ws.w + u];
+        if (c) buf[y * W + x] = c;
+      }
+    }
   }
 }

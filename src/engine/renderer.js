@@ -80,18 +80,38 @@ export class Renderer {
       const yBot = halfH + halfH / d;
       const yTop = yBot - lineH;
       const step = 64 / lineH; // texels per screen row
+      const u = Math.min(63, (ray.texX * 64) | 0); // texture COLUMN for this slice
+      const ut = ray.texX * 64; // continuous u (decal hit tests)
       const b = lightLevel(d, flash, ray.side === 1);
       const sideLvl = ray.side === 1 ? 32 : 0;
       const y0 = yTop < 0 ? 0 : yTop | 0;
       const y1 = yBot >= H ? H : (yBot | 0) + 1;
-      let ty = ray.texX * 64 + (y0 - yTop) * step;
+      if (map.decals) {
+        this._dHead = map.decals.head[idx * 2 + ray.side];
+        this._dNext = map.decals.next;
+        this._dItems = map.decals.items;
+        this._dBlood = map.decals.blood;
+        this._dBurn = map.decals.burn;
+      } else {
+        this._dHead = -1; this._dItems = null; this._dBlood = null; this._dBurn = null;
+      }
+      let ty = (y0 - yTop) * step; // texture ROW from the slice top
       while (ty < 0) ty += 64;
       while (ty >= 64) ty -= 64;
       let off = y0 * W + x;
-      let lvl = sideLvl + b;
+      const lvl = sideLvl + b;
+      const dHead = this._dHead;
       for (let y = y0; y < y1; y++) {
-        const u = ty | 0;
-        buf[off] = tbl[(u << 6) | lvl];
+        buf[off] = tbl[(((ty | 0) << 6) + u) << 6 | lvl];
+        if (dHead !== -1) {
+          for (let di = dHead; di >= 0; di = this._dNext[di]) {
+            const dec = this._dItems[di];
+            if (Math.abs(dec.u64 - ut) < dec.r && Math.abs(ty - dec.v64) < dec.r) {
+              const t = dec.kind ? this._dBurn : this._dBlood;
+              if (t) buf[off] = t[lvl];
+            }
+          }
+        }
         ty += step;
         if (ty >= 64) ty -= 64;
         off += W;

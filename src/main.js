@@ -3,6 +3,8 @@
 
 import { Game } from './game/game.js';
 import { makeTables } from './gfx/textures.js';
+import { initAudio, playSfx } from './audio/sfx.js';
+import { startMusic } from './audio/music.js';
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d', { alpha: false });
@@ -15,6 +17,15 @@ const game = new Game(makeTables(document), W, H, new Uint32Array(img.data.buffe
 
 // QA hook: expose the game graph behind ?debug (used by headless CDP tests)
 if (new URLSearchParams(location.search).has('debug')) window.__wd = game;
+
+// Audio: sfx via game.sfx; context created/resumed on the first gesture.
+game.sfx = (n) => playSfx(n);
+let audioUnlocked = false;
+function unlockAudio() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  if (initAudio()) startMusic();
+}
 
 // ---------------- on-page error log (visible only when something failed) -------
 // Lets the player on another machine copy real error text for debugging without
@@ -44,10 +55,21 @@ const KEYMAP = {
 };
 
 window.addEventListener('keydown', (e) => {
+  unlockAudio();
+  if (e.code >= 'Digit1' && e.code <= 'Digit4') {
+    game.switchWeapon(+e.code[5]);
+    return;
+  }
   const k = KEYMAP[e.code];
   if (k) { input[k] = true; e.preventDefault(); }
   if (e.code === 'KeyE') input.use = true;
 });
+window.addEventListener('pointerdown', unlockAudio);
+window.addEventListener('wheel', (e) => {
+  const p = game.player;
+  const n = (((p.weapon - 1 + (e.deltaY > 0 ? 1 : -1)) % 4) + 4) % 4 + 1;
+  game.switchWeapon(n);
+}, { passive: true });
 window.addEventListener('keyup', (e) => {
   const k = KEYMAP[e.code];
   if (k) input[k] = false;

@@ -113,6 +113,8 @@ export function updateEnemies(game, dt) {
       if (ns === ST.DEATH) {
         game.stats.kills++;
         game.emitSound(e.x, e.y, 7);
+        game.spawnBlood(e.x, e.y, 12, Math.atan2(game.player.y - e.y, game.player.x - e.x), 4.5);
+        game.sfx('edead');
       } else if (ns === ST.ALERT) {
         game.emitSound(e.x, e.y, 4);
       }
@@ -164,11 +166,12 @@ export function updateEnemies(game, dt) {
       case ST.ATTACK: {
         e.animT += dt;
         if (def.kind === 'ranged') {
-          if (e.cd <= 0 && sees) {
-            e.cd = def.cd; e.anim = 'atk'; e.animT = 0;
-            fireEnemyProjectile(game, e);
-            game.emitSound(e.x, e.y, 3);
-          } else if (e.anim !== 'atk') e.anim = 'idle';
+            if (e.cd <= 0 && sees) {
+              e.cd = def.cd; e.anim = 'atk'; e.animT = 0;
+              fireEnemyProjectile(game, e);
+              game.emitSound(e.x, e.y, 3);
+              game.sfx('eshoot');
+            } else if (e.anim !== 'atk') e.anim = 'idle';
           if (e.anim === 'atk' && e.animT > 0.45) e.anim = 'idle';
         } else if (def.kind === 'melee') {
           if (dist > def.range * 0.85 && sees) stepEnemy(e, def, dx, dy, dist, dt, view, game.map);
