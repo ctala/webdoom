@@ -33,4 +33,5 @@ bench('stage2 textured+floor/ceil, walk+spin', real, (g) => {
   const orig = g.tick.bind(g);
   g.tick = (dt) => { orig(dt); g.turn(60); };
 });
+bench('stage3 E1M1: 6 enemies AI+projectiles+sprites', real, (g) => { g.input.up = true; });
 console.log('\nnote: CPU-only V8 timings; browser adds ~<0.5ms GPU blit for 480x270.');

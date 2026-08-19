@@ -38,3 +38,64 @@ Sin errores de consola en el run de tests.
 Tests: 64 pasando (antes 57; +7 de texturas/alturas/fog).
 Frame time (bench CPU, escenario completo texturizado): walk **0.435 ms/frame**,
 walk+spin **0.385 ms/frame** (budget 16.66). Sin errores de consola.
+
+## Stage 3 — Sprites billboard + 4 tipos de enemigo (FSM, A*, sonido)
+- SpriteRenderer: billboards 32x32 con proyección a la misma base de cámara
+  que el DDA, orden far-to-near, z-test por columna contra el z-buffer de
+  (`depth`) de paredes (occlusión exacta, sin z-buffer propio), LUT de
+  atenuación 32 niveles por brillo. Max 160 sprites por frame, inserción
+  ordenada reutilizando arrays (cero allocations en caliente).
+- 4 enemigos procedurales (Canvas2D offscreen, mismos pintores en navegador
+  y en node vía stub software): imp (ranged fuego), demon (melee 4 uolfs),
+  commander (hitscan ráfaga de 3), caco (bolas voladoras, flota +0.35).
+  Sets de frames: idle/walk/atk/pain/death/corpse, deterministas.
+- IA en `src/game/enemy.js` (estado en slots preasignados):
+  - FSM SLEEP→ALERT→CHASE→ATTACK→PAIN→DEATH→CORPSE impulsada por eventos
+    (sees/hears/inRange/hurt/dead/painDone/targetLost) — la tabla de
+    transición es pura y testable.
+  - Vía directa si hay line-of-sight; si no, A* a la celda del jugador
+    (re-computado cada 1.3s o al quedarse atascado >0.9s); sin ruta →
+    targetLost → duerme de nuevo (no se atasca en salas selladas).
+  - Sonido: eventos {x,y,vol} emiten un radio `vol`; escuchan si están
+    dentro → despiertan aunque no vean al jugador. El buffer se limpia al
+    FINAL del tick (fijación de bug: al comienzo del tick se borraban
+    sonidos emitidos entre ticks).
+  - Melee con arco de swing 0.35s (golpea en la ventana central), separado
+    por pares (push 0.25 si dist<0.6) para no apilarse.
+- Balísticos enemigos (projectiles, pool de 32): substeps de 2 para no
+  atravesar paredes ni saltarse al jugador; inaccuracy ±1.1° (fijación de
+  bug: ±0.1 rad desviaba el 100% de los tiros a media distancia); owner=0
+  → golpe al jugador con `damageFalloff`.
+- Integración en `game.js`: `hurtPlayer` con reparto de armadura (70%),
+  flash de daño, cara de HUD por nivel de vida; sprites de enemigos y
+  orbes de proyectiles ya se renderizan tras las paredes.
+
+Tests: 73 pasando (antes 64; +9: despertar por visión/sonido, melee,
+muerte→cadáver, A* sin meterse en paredes, volleys de imp/caco, pool sano,
+separación).
+Frame time (bench CPU, E1M1 completo: 6 enemies con IA + proyectiles +
+sprites): **0.423 ms/frame** (budget 16.66). Sin errores de consola.
+
+### QA de navegador (Chromium headless vía CDP, página real servida)
+El path de sprites/sombras en navegador NO se cubría con los tests node
+(usan StubCtx). QA real detectó y corrigió 3 bugs browser-only:
+1. `CanvasProxy` sincronizaba desde un `createImageData` nuevo (cero bytes)
+   en vez del contenido del canvas → `Uncaught TypeError` al arrancar ⇒
+   **pantalla negra** (solo se veía el cursor). Fix: `getImageData` tras
+   cada op + forwarding de fillStyle/strokeStyle/lineWidth al ctx real.
+2. `buildGlowSprites` leía `data[i+3]` (canal R de otro texel) en vez de
+   `data[i*4+3]` → orbes con alpha basura.
+3. `paintImp` pasaba radio negativa a `ellipse()` en frames de ataque
+   (`2 − 9·0.5 = −2.5`); el canvas real lanza `IndexSizeError` (el stub no).
+   Fix en el pintor + clamp defensivo en `CanvasProxy`.
+Además: `willReadFrequently` en el canvas offscreen (adiós warning de
+lecturas repetidas) y handle `window.__wd` tras `?debug` para QA CDP.
+Regresión: `tests/sprites.test.js` (+5): path CanvasProxy sobre ctx-fake
+bit-a-bit idéntico al stub, geometría de orbes, determinismo, clamp de
+radios negativos contra un ctx estricto que lanza como el real.
+
+Tests: 78 pasando.
+QA en navegador: 0 excepciones, 0 mensajes de consola, frame completo
+(1337/1337 muestras ≠ negro), y combat loop end-to-end: teletransporte al
+lado de un imp → imp+comandante en ATTACK → fireballs (`#ffdc8c`) →
+jugador muere (`state: DEAD`, kills registrados). Pantalla negra resuelta.

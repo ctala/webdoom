@@ -13,6 +13,9 @@ const img = new ImageData(W, H);
 // table build (~14 x 64x64 shade tables); later frames are allocation-free.
 const game = new Game(makeTables(document), W, H, new Uint32Array(img.data.buffer), img);
 
+// QA hook: expose the game graph behind ?debug (used by headless CDP tests)
+if (new URLSearchParams(location.search).has('debug')) window.__wd = game;
+
 // ---------------- input ----------------
 const input = game.input;
 const KEYMAP = {
