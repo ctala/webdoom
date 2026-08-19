@@ -59,7 +59,7 @@ const locked = () => document.pointerLockElement === canvas;
 canvas.addEventListener('mousedown', (e) => {
   if (e.button !== 0) return;
   if (!locked()) {
-    canvas.requestPointerLock();
+    tryLock();
     return;
   }
   input.fire = true;
@@ -76,32 +76,34 @@ function tryLock() {
   const p = canvas.requestPointerLock();
   if (p && typeof p.catch === 'function') p.catch(() => {});
 }
+// Single source of truth for pause, debounced: in some browsers one ESC press
+// fires BOTH keydown(Escape) and pointerlockchange; without this the game
+// would pause and instantly unpause (looks like ESC does nothing).
+let lastPauseToggle = 0;
+function setPaused(v) {
+  if (game.state !== 'PLAY' || game.paused === v) return;
+  const now = performance.now();
+  if (now - lastPauseToggle < 350) return;
+  lastPauseToggle = now;
+  game.paused = v;
+  if (v) {
+    input.fire = false; input.up = input.down = input.left = input.right = input.run = false;
+  } else if (!locked()) {
+    tryLock();
+  }
+}
 document.addEventListener('pointerlockchange', () => {
   if (game.state !== 'PLAY') return;
-  if (!locked()) {
-    // ESC releases the lock; treat unlock as pause.
-    if (!game.paused) {
-      game.paused = true;
-      input.fire = false; input.up = input.down = input.left = input.right = input.run = false;
-    }
-  } else if (game.paused) {
-    game.paused = false;
-  }
+  if (!locked()) setPaused(true);  // just unlocked (ESC or focus loss) -> pause
+  else setPaused(false);           // just re-locked -> resume
 });
 window.addEventListener('keydown', (e) => {
   if (e.code !== 'Escape' || game.state !== 'PLAY') return;
-  if (locked()) return; // ESC-exit is handled by pointerlockchange (pauses)
-  if (game.paused) {
-    game.paused = false;
-    tryLock();
-  } else {
-    game.paused = true;
-    input.fire = false; input.up = input.down = input.left = input.right = input.run = false;
-  }
+  setPaused(!game.paused);         // ESC toggles pause, locked or not
 });
 window.addEventListener('blur', () => {
-  if (game.state === 'PLAY' && !game.paused) game.paused = true;
   input.fire = false;
+  setPaused(true);
 });
 
 // ---------------- death / respawn (full HUD + menus arrive in stage 6) --------

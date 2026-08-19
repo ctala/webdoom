@@ -23,12 +23,14 @@
     padding: 6px 8px; display: none;
     pointer-events: none;
   }
-  /* minimal death screen (full HUD/menus arrive in stage 6) */
+  /* full-screen state screens: PAUSED (ESC) and YOU DIED (full HUD in stage 6) */
   #msg {
-    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    z-index: 9; color: #ff5040; background: rgba(0,0,0,0.55);
-    font: bold 22px/1.4 ui-monospace, monospace; letter-spacing: 1px;
-    text-align: center; padding: 18px 26px; display: none;
+    position: absolute; inset: 0; z-index: 9;
+    display: none; place-items: center;
+    background: rgba(0, 0, 0, 0.72);
+    color: #ff5040;
+    font: bold 30px/1.5 ui-monospace, monospace; letter-spacing: 2px;
+    text-align: center; white-space: pre; padding: 20px;
     pointer-events: none;
   }
 </style>
