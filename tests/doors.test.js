@@ -60,6 +60,31 @@ test('closed door draws door texture; opening it changes the frame', () => {
   assert.ok(openDiff > closed.length / 4, 'fully open door differs from closed frame');
 });
 
+test('death -> respawn() restarts the level clean (no stuck state)', () => {
+  const rows = [];
+  for (let y = 0; y < 13; y++) {
+    let r = '';
+    for (let x = 0; x < 14; x++) r += (x === 0 || y === 0 || x === 13 || y === 12) ? '#' : '.';
+    rows.push(r);
+  }
+  rows[6] = rows[6].slice(0, 3) + 'i' + rows[6].slice(4);   // imp at (3.5,6.5)
+  rows[6] = rows[6].slice(0, 10) + 'P' + rows[6].slice(11); // player at (10.5,6.5)
+  const g = game(rows, 0);
+  const e = (i) => g.enemies[i];
+  const before = g.stats.kills;
+  g.player.hp = 5; // one fireball hit (8 at this range) finishes the job
+  // let the aggroed imp kill the player with a projectile
+  for (let i = 0; i < 400 && g.state === 'PLAY'; i++) g.tick(1 / 60);
+  assert.equal(g.state, 'DEAD', 'player died (state was ' + g.state + ')');
+  assert.equal(g.player.hp, 0);
+  g.respawn();
+  assert.equal(g.state, 'PLAY', 'respawn back to PLAY');
+  assert.equal(g.player.hp, 100);
+  assert.equal(g.player.x, g.map.player.x, 'back at level start');
+  assert.equal(e(0).hp, 60, 'enemies reset to full hp');
+  assert.equal(g.stats.kills, before, 'kill counter unchanged across respawn');
+});
+
 test('E1M1: walking the corridor sees D/R doors and never throws', () => {
   const g = new Game(makeTables(null), 480, 270, new Uint32Array(480 * 270));
   // aim through the corridor gap (5..6,14) and walk north into the door row

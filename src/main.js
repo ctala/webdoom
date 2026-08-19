@@ -16,6 +16,22 @@ const game = new Game(makeTables(document), W, H, new Uint32Array(img.data.buffe
 // QA hook: expose the game graph behind ?debug (used by headless CDP tests)
 if (new URLSearchParams(location.search).has('debug')) window.__wd = game;
 
+// ---------------- on-page error log (visible only when something failed) -------
+// Lets the player on another machine copy real error text for debugging without
+// opening devtools. Catches window errors, unhandled rejections and anything
+// thrown inside the frame loop (tick/render).
+const errlog = document.getElementById('errlog');
+const errLines = [];
+function logError(where, err) {
+  const line = `[${new Date().toLocaleTimeString()}] ${where}: ${err && err.stack ? err.stack.split('\n').slice(0, 3).join(' | ') : String(err)}`;
+  errLines.push(line);
+  if (errLines.length > 20) errLines.shift();
+  errlog.textContent = errLines.join('\n');
+  errlog.style.display = 'block';
+}
+window.addEventListener('error', (e) => logError(`${e.filename || 'page'}:${e.lineno || '?'}`, e.message));
+window.addEventListener('unhandledrejection', (e) => logError('promise', e.reason));
+
 // ---------------- input ----------------
 const input = game.input;
 const KEYMAP = {
@@ -72,6 +88,14 @@ window.addEventListener('blur', () => {
   input.fire = false;
 });
 
+// ---------------- death / respawn (full HUD + menus arrive in stage 6) --------
+const msg = document.getElementById('msg');
+window.addEventListener('keydown', (e) => {
+  if ((e.code === 'Enter' || e.code === 'NumpadEnter') && game.state === 'DEAD') {
+    game.respawn();
+  }
+});
+
 // ---------------- fixed-timestep loop ----------------
 const STEP = 1000 / 60;
 let last = performance.now();
@@ -79,17 +103,26 @@ let acc = 0;
 
 function frame(now) {
   requestAnimationFrame(frame);
-  let d = now - last;
-  last = now;
-  if (d > 250) d = 250; // tab refocus spike
-  acc += d;
-  let n = 0;
-  while (acc >= STEP && n < 5) {
-    game.tick(STEP / 1000);
-    acc -= STEP;
-    n++;
+  try {
+    let d = now - last;
+    last = now;
+    if (d > 250) d = 250; // tab refocus spike
+    acc += d;
+    let n = 0;
+    while (acc >= STEP && n < 5) {
+      game.tick(STEP / 1000);
+      acc -= STEP;
+      n++;
+    }
+    if (n === 5) acc = 0; // spiral-of-death guard
+    game.render(ctx);
+    // minimal death screen
+    const dead = game.state === 'DEAD';
+    msg.style.display = dead ? 'block' : 'none';
+    if (dead) msg.textContent = 'YOU DIED\npress ENTER to retry';
+  } catch (err) {
+    // one bad frame must not kill the loop; surface it in the on-page log
+    if (!err._counted) { err._counted = true; logError('frame', err); }
   }
-  if (n === 5) acc = 0; // spiral-of-death guard
-  game.render(ctx);
 }
 requestAnimationFrame(frame);

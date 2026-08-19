@@ -72,6 +72,12 @@ export class Game {
     this.setMessage(def.name);
   }
 
+  /** Restart the current level (after death). Full intermission comes in stage 6. */
+  respawn() {
+    if (this.state === 'PLAY') return;
+    this.loadLevel(this.levelIdx);
+  }
+
   setupLevelEntities() {
     setupEnemies(this);
     this.soundLen = 0;

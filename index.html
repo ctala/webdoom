@@ -13,10 +13,30 @@
     image-rendering: pixelated; image-rendering: crisp-edges;
     cursor: crosshair;
   }
+  /* on-page error log: visible only when something went wrong (cross-PC debug) */
+  #errlog {
+    position: absolute; top: 4px; right: 4px; z-index: 10;
+    max-width: 60vw; max-height: 40vh; overflow: auto;
+    background: rgba(40, 0, 0, 0.92); color: #ff8070;
+    border: 1px solid #a03030;
+    font: 11px/1.45 ui-monospace, monospace; white-space: pre;
+    padding: 6px 8px; display: none;
+    pointer-events: none;
+  }
+  /* minimal death screen (full HUD/menus arrive in stage 6) */
+  #msg {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    z-index: 9; color: #ff5040; background: rgba(0,0,0,0.55);
+    font: bold 22px/1.4 ui-monospace, monospace; letter-spacing: 1px;
+    text-align: center; padding: 18px 26px; display: none;
+    pointer-events: none;
+  }
 </style>
 </head>
 <body>
 <canvas id="game" width="480" height="270"></canvas>
+<div id="errlog"></div>
+<div id="msg"></div>
 <script type="module" src="src/main.js"></script>
 </body>
 </html>

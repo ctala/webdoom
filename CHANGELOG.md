@@ -120,3 +120,16 @@ enmarcaron nunca una puerta, por eso no saltaba.
   que el bug llegó al jugador; por etapa se ejecuta antes de commitear.
 
 Tests: 81 pasando. QA-sweep: CLEAN (0 errores).
+
+### QA de sesión (jugando desde otro PC)
+- "Se me quedó pegado cuando me llegó un disparo": NO era crash — era la
+  muerte sin feedback (estado DEAD congela el tick y no existía pantalla de
+  muerte hasta stage 6). Verificado: 0 excepciones al morir a fireball.
+  Fix mínimo: `game.respawn()` (recarga el nivel) + pantalla "YOU DIED —
+  ENTER" en DOM (`#msg`); el loop `frame()` ahora rodea tick/render con
+  try/catch (un frame malo nunca mata el rAF).
+- **Log local de errores en página** (`#errlog`): captura `window error`,
+  `unhandledrejection` y excepciones del loop, con timestamp + stack (20
+  últimas). Invisible si no hay nada; permite depurar desde la máquina del
+  jugador sin devtools. Verificado con errores reales inyectados.
+- Tests: 82 pasando (+1: respawn tras muerte).
