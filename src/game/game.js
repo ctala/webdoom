@@ -57,6 +57,7 @@ export class Game {
     this.view = new Uint8Array(gw * gh);
     this.explored = new Uint8Array(gw * gh);
     this.doorH = new Float32Array(gw * gh);
+    this.map.doorH = this.doorH; // renderer reads door height through the map
     this.stats.levelTime = 0;
     this.setupLevelEntities();
     // per-level theme: floor + ceiling tables

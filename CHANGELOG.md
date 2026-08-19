@@ -99,3 +99,24 @@ QA en navegador: 0 excepciones, 0 mensajes de consola, frame completo
 (1337/1337 muestras ≠ negro), y combat loop end-to-end: teletransporte al
 lado de un imp → imp+comandante en ATTACK → fireballs (`#ffdc8c`) →
 jugador muere (`state: DEAD`, kills registrados). Pantalla negra resuelta.
+
+### QA de juego real (reporte del jugador: crash al ver una puerta)
+`TypeError: Cannot read properties of undefined (reading '324')` en
+`renderer.js:74` tras caminar un rato (Brave y Chrome): `idx 324 = fila
+10 col 4` = la puerta D del corredor. Root cause: el renderer lee
+`map.doorH`, pero `parseLevel` nunca la expone (vivía en `game.doorH`) y
+solo se toca al dibujar una celda de puerta. Los soaks anteriores no
+enmarcaron nunca una puerta, por eso no saltaba.
+- Fix: `map.doorH = this.doorH` en `loadLevel` (una línea, misma fuente de
+  verdad — `rebuildView` ya abre/cierra vía ese buffer).
+- Regresión (`tests/doors.test.js`, +3): vista con celdas de puerta nunca
+  lanza + barrido 360°; puerta cerrada ≠ negra, media abierta cambia el
+  frame (sube 50%) y abierta cambia de nuevo; E1M1 de corridas por el
+  corredor (ver D/R) sin excepción.
+- **`scripts/qa-browser.mjs`** (0 deps): sweep QA sistémico — muestrea
+  celdas abiertas + vecinas de TODAS las puertas (8 direcciones c/u) +
+  45s de caminar; falla con exit 1 ante CUALQUIER error de consola o
+  excepción de página. Corrección de proceso: este era el vacío por el
+  que el bug llegó al jugador; por etapa se ejecuta antes de commitear.
+
+Tests: 81 pasando. QA-sweep: CLEAN (0 errores).
