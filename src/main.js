@@ -116,10 +116,12 @@ function frame(now) {
     }
     if (n === 5) acc = 0; // spiral-of-death guard
     game.render(ctx);
-    // minimal death screen
+    // minimal state screens (full HUD/menus arrive in stage 6)
     const dead = game.state === 'DEAD';
-    msg.style.display = dead ? 'block' : 'none';
+    const paused = game.state === 'PLAY' && game.paused;
+    msg.style.display = dead || paused ? 'block' : 'none';
     if (dead) msg.textContent = 'YOU DIED\npress ENTER to retry';
+    else if (paused) msg.textContent = 'PAUSED\npress ESC to continue';
   } catch (err) {
     // one bad frame must not kill the loop; surface it in the on-page log
     if (!err._counted) { err._counted = true; logError('frame', err); }
