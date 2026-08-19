@@ -40,4 +40,9 @@ bench('stage4 E1M1 combat: pistol fire+blood+viewmodel', real, (g) => {
 bench('stage4 E1M1 combat: plasma bolts+splash+decals', real, (g) => {
   g.input.up = true; g.input.fire = true; g.player.hp = 1e5; g.player.weapon = 4;
 });
+bench('stage5 E2M1: enemies+items+doors+shotgun viewmodel', real, (g) => {
+  g.loadLevel(1);
+  g.input.up = true; g.input.fire = true; g.player.hp = 1e5; g.player.weapon = 3;
+  for (let i = 0; i < g.doorCells.length; i++) g.doorH[g.doorCells[i]] = 0.02 + (i % 5) * 0.18;
+});
 console.log('\nnote: CPU-only V8 timings; browser adds ~<0.5ms GPU blit for 480x270.');

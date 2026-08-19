@@ -186,8 +186,8 @@ sweep QA CLEAN.
 - **Sweep QA: 404 de fondo de Chrome**. El navegador (favicon/updater)
   genera 404s sin ninguna petición de la página; el gate los contaba y
   fallaba de forma flaky. Now: se ignoran 404s cuya URL no es nuestro
-  origen (127.0.0.1:8000); un módulo roto del juego sigue fallando el
-  sweep por el chequeo `?debug handle missing`.
+  origen (127.0.0.1:8000); ahora se ignoran esos 404s; un módulo roto del
+  juego sigue fallando el sweep por el chequeo `?debug handle missing`.
 - Tests: 100 pasando (+3: reticle en el centro del buffer, cambio de arma
   neutro, AIM central cumplido por el plasma). Sweep CLEAN en 2/2
   ejecuciones; frame QA `_qa/l_reticle.png`.
@@ -197,3 +197,46 @@ sweep QA CLEAN.
   (`paintFist` t===1: filas 10-74 del sprite) y "se ilumina todo" — debería
   ser un swing compacto de un puño; (b) no se intercalan manos izquierda/
   derecha — agregar paridad por swing (`punchParity`) con frame espejado.
+
+### Etapa 5: ítems, llaves, puertas (¡por fin!), secreto y E2M1
+- **Bug estructural hallado al conectar la tecla E: `input.use` nunca se
+  leía.** Las puertas se renderizaban (y los tests movían `doorH` a mano),
+  pero en el juego real NO se podían abrir. Etapa 5 conecta el uso completo:
+  - `src/game/interact.js`: `useAction` (E **o** U, estilo Doom) — raycast de
+    ~1.3u adelante: puertas D/S abren; R/B necesitan keycard (mensaje
+    "NEED THE ... KEYCARD" + sfx `denied`); la pared secreta S cuenta
+    `stats.secrets` una vez ("SECRET FOUND"); el switch X a <=1.3u completa
+    el nivel. Nada interactivo adelante → blip corto de `denied`.
+  - Animación de puerta: `doorH` 0→1 en 0.55s (el renderer ya leía `doorH` —
+    media altura real); `rebuildView` solo al cruzar 0.95.
+  - **Progresión**: `levels=[E1M1, E2M1]`. Exit → `INTERM` (2.4s, ENTER
+    salta) → carga el siguiente nivel llevando llaves (`loadLevel(idx,
+    carryKeys)`); último nivel → `WON` ("YOU ESCAPED" + ENTER). Muerte sigue
+    reiniciando sin llaves.
+- **Ítems con pickups por pisar** (tope de radio 0.55u, auto — no hay tecla
+  de recoger): `src/game/items.js` (pool 48) + `src/gfx/itemSprites.js`
+  (7 sprites 32x32 procedurales: medpack, casco, balas, cartuchos, celdas,
+  keycard rojo/azul flotante). Reglas Doom: hp+25 (top 100, completo no
+  recoge), armadura +50 (top 100), munición a tope por arma (200/50/100),
+  keycards persistentes (se llevan entre niveles; se pierden al morir).
+  Mensaje + sfx `pickup` + sonido espacial para que despierten enemigos.
+- **E2M1 ARMORY** (32x24, theme 1): sala inicial → sala de llaves
+  (keycard azul entre 2 demonios) → gran salón (imp/cacer, munición) →
+  puerta B → sala de salida (X) con nicho secreto S (armadura). 9 enemigos,
+  14 ítems, 5 puertas (3 D, 1 B, 1 S). Validado con flood-fill de
+  alcanzabilidad (mismo criterio que levels.test.js).
+- sfx nuevos: `denied` (buzz grave), `complete` (acento de nivel).
+- Game.js creció con items/interacción: 379 → 395 líneas (redline <400);
+  el render de ítems vive en items.js (`renderItems`) y el timer de
+  intermisión en interact.js (`updateIntermission`) para mantener los
+  módulos por debajo del tope.
+
+Tests: 116 pasando (+15 en tests/items.test.js: pickups/tope/llaves,
+E2M1 válido+alcanzable, puertas D/R/B/S con y sin llave, secreto una sola
+vez, exit→INTERM→carga nivel siguiente, WON, item sprites). Bench: stage5
+E2M1 lleno (9 enemigos + ítems + puertas abriéndose + viewmodel escopeta)
+**0.637 ms/frame**. QA navegador: sweep CLEAN; soak funcional vía CDP con
+tiempo real — medkit (hp 60→85), keycard rojo abierto la puerta R, exit →
+INTERM → E2M1 por el rAF real, keycard azul real abierta la puerta B
+(denied antes), 14 ítems, 0 errores de consola. Frame QA
+`_qa/m_e2m1.png` + contact sheet 8 tiles.

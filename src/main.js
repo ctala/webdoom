@@ -62,7 +62,7 @@ window.addEventListener('keydown', (e) => {
   }
   const k = KEYMAP[e.code];
   if (k) { input[k] = true; e.preventDefault(); }
-  if (e.code === 'KeyE') input.use = true;
+  if (e.code === 'KeyE' || e.code === 'KeyU') input.use = true; // E or U, Doom-style
 });
 window.addEventListener('pointerdown', unlockAudio);
 window.addEventListener('wheel', (e) => {
@@ -74,6 +74,7 @@ window.addEventListener('keyup', (e) => {
   const k = KEYMAP[e.code];
   if (k) input[k] = false;
   if (e.code === 'KeyE') input.use = false;
+  // KeyU stays true while held: useAction consumes it (edge handled in tick)
 });
 
 const locked = () => document.pointerLockElement === canvas;
@@ -128,11 +129,13 @@ window.addEventListener('blur', () => {
   setPaused(true);
 });
 
-// ---------------- death / respawn (full HUD + menus arrive in stage 6) --------
+// ---------------- death / respawn / won (full HUD + menus arrive in stage 6) --
 const msg = document.getElementById('msg');
 window.addEventListener('keydown', (e) => {
-  if ((e.code === 'Enter' || e.code === 'NumpadEnter') && game.state === 'DEAD') {
-    game.respawn();
+  if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+    if (game.state === 'DEAD') game.respawn();
+    else if (game.state === 'WON') game.loadLevel(0);
+    else if (game.state === 'INTERM') game.intermT = 0; // skip the intermission
   }
 });
 
@@ -159,8 +162,12 @@ function frame(now) {
     // minimal state screens (full HUD/menus arrive in stage 6)
     const dead = game.state === 'DEAD';
     const paused = game.state === 'PLAY' && game.paused;
-    msg.style.display = dead || paused ? 'block' : 'none';
+    const inter = game.state === 'INTERM';
+    const won = game.state === 'WON';
+    msg.style.display = dead || paused || inter || won ? 'block' : 'none';
     if (dead) msg.textContent = 'YOU DIED\npress ENTER to retry';
+    else if (won) msg.textContent = 'YOU ESCAPED\npress ENTER to play again';
+    else if (inter) msg.textContent = game.levels[game.levelIdx].name + ' — COMPLETE\nnext: ' + game.levels[game.levelIdx + 1].name + '\n(ENTER to skip)';
     else if (paused) msg.textContent = 'PAUSED\npress ESC to continue';
   } catch (err) {
     // one bad frame must not kill the loop; surface it in the on-page log

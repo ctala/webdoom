@@ -16,9 +16,13 @@ import { updateWeapons, switchWeapon } from './weapons.js';
 import { makeBlood, updateParticles, renderParticles, spawnBlood, BLOOD_MAX } from './particles.js';
 import { buildSprites, buildGlowSprites } from '../gfx/sprites.js';
 import { buildWeaponSprites } from '../gfx/weaponSprites.js';
+import { buildItemSprites } from '../gfx/itemSprites.js';
 import { makeFlatBg } from '../gfx/assets.js';
 import { castRay } from '../engine/raycaster.js';
+import { makeItems, setupItems, updateItems, renderItems } from './items.js';
+import { initDoors, updateDoors, useAction, updateIntermission } from './interact.js';
 import { E1M1 } from '../../levels/e1m1.js';
+import { E2M1 } from '../../levels/e2m1.js';
 
 export const DEC_MAX = 128;
 const _decRay = { perp: 0, side: 0, cellX: 0, cellY: 0, hitId: 0, texX: 0 };
@@ -44,6 +48,8 @@ export class Game {
     this.enemyCount = 0;
     this.projectiles = new Pool(32, () => ({ x: 0, y: 0, vx: 0, vy: 0, active: false, kind: 'fire', dmg: 10, life: 0, owner: 0, splash: 0, splashDmg: 0 }));
     this.viewModels = buildWeaponSprites(typeof document !== 'undefined' ? document : null);
+    this.itemSprites = buildItemSprites(typeof document !== 'undefined' ? document : null);
+    makeItems(this);
     makeBlood(this);
     // wall decals: per-level head list (cell,0/1 sides) + fixed item pool
     this.decalItems = new Array(DEC_MAX);
@@ -58,19 +64,21 @@ export class Game {
     for (let i = 0; i < 32; i++) this.sound[i] = { x: 0, y: 0, vol: 0 };
     this.soundLen = 0;
     this.levelIdx = 0;
-    this.levels = [E1M1];
+    this.levels = [E1M1, E2M1];
     this.message = { text: '', t: 0 };
     this.stats = { kills: 0, totalKills: 0, secrets: 0, totalSecrets: 0, time: 0, levelTime: 0 };
     this.input = { up: false, down: false, left: false, right: false, run: false, fire: false, use: false };
     this.loadLevel(0);
   }
 
-  loadLevel(idx) {
+  loadLevel(idx, carryKeys = false) {
     const def = this.levels[idx];
     this.levelIdx = idx;
     this.map = parseLevel(def.map, def.name);
     const { gw, gh } = this.map;
+    const prev = this.player || null;
     this.player = createPlayer(this.map.player.x, this.map.player.y, def.startAng || 0);
+    if (carryKeys && prev) { this.player.keyR = prev.keyR; this.player.keyB = prev.keyB; }
     this.player.flash = 0;
     this.player.wpnCd = 0;
     this.player.swingT = 0;
@@ -89,6 +97,8 @@ export class Game {
     };
     this.rng = 0x1234abcd;
     this.stats.levelTime = 0;
+    this.secretCounted = false;
+    initDoors(this);
     this.setupLevelEntities();
     // per-level theme: floor + ceiling tables
     if (this.assets.floorTables) {
@@ -110,6 +120,7 @@ export class Game {
 
   setupLevelEntities() {
     setupEnemies(this);
+    setupItems(this);
     this.soundLen = 0;
     this.projectiles.each((pr) => { pr.active = false; });
   }
@@ -201,13 +212,17 @@ export class Game {
   }
 
   tick(dt) {
+    if (updateIntermission(this, dt)) return; // counts down and loads the next level
     if (this.state !== 'PLAY' || this.paused) return;
     const p = this.player;
     this.stats.levelTime += dt;
     updatePlayer(p, this.input, dt, this.view, this.map);
+    if (this.input.use) { useAction(this); this.input.use = false; }
     updateWeapons(this, dt);
     updateProjectiles(this, dt);
     updateParticles(this, dt);
+    updateItems(this);
+    updateDoors(this, dt);
     if (p.flash > 0) p.flash = Math.max(0, p.flash - dt * 5);
     if (this.state === 'PLAY') updateEnemies(this, dt);
     this.soundLen = 0; // sounds consumed by enemies this tick; clear last
@@ -318,6 +333,7 @@ export class Game {
       if (d < 0.25) continue;
       sr.add(e.x, e.y, def.viewH, sp[set][f], sp.w, sp.h, def.lift || 0, lightLevel(d, 0, false));
     }
+    renderItems(this, sr, p, cosA, sinA);
     // projectiles: bright orbs (no dimming — they emit light)
     this.projectiles.each((pr) => {
       if (!pr.active) return;

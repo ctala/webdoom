@@ -74,6 +74,8 @@ export const SFX_BANK = {
   switch: (t0) => { tone('square', 700, 500, t0, 0.05, 0.15); tone('square', 900, 700, t0 + 0.07, 0.05, 0.15); },
   door: (t0) => { noise(0.5, 0.4, 300, t0); },
   pickup: (t0) => { tone('sine', 660, 990, t0, 0.12, 0.2); },
+  denied: (t0) => { tone('square', 110, 70, t0, 0.16, 0.3); },
+  complete: (t0) => { tone('sine', 520, 780, t0, 0.12, 0.25); tone('sine', 780, 1170, t0 + 0.13, 0.18, 0.25); },
 };
 
 /** Play one sfx by name; silent when no running context exists. */
