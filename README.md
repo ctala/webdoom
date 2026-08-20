@@ -12,8 +12,9 @@ vLLM)**: todo el motor, los niveles, el HUD, el audio y hasta la suite de QA
 fue construido por el modelo en 7 etapas, de forma autónoma; la persona solo
 jugó, reportó bugs de jugada ("no encuentro la salida", "el jefe no cae") y
 dio la dirección. Sin assets, sin librerías, sin build step: es puro
-HTML + módulos ES. Ver `CHANGELOG.md` para el registro etapa por etapa,
-incluyendo los bugs reales que el QA de navegador encontró y corrigió.
+HTML + módulos ES. Ver `EXPERIMENTS.md` (cronología por commit, métricas,
+12 bugs hallados por la QA del agente y la planilla de datos de inferencia)
+y `CHANGELOG.md` para el registro técnico etapa por etapa.
 
 ## Ejecutar
 
