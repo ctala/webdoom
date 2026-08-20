@@ -67,28 +67,36 @@ la dirección. Sin librerías, sin assets binarios, sin build step.
 Categoría de detección: 4 reportados por la persona jugando (3, 4, 5, 7
 parcial) y 8 por la QA automatizada del agente (browser-only o logic-only).
 
-## Datos de inferencia (PARA COMPLETAR — del lado de Spark/LiteLLM/vLLM)
+## Datos de inferencia (medidos)
 
-El agente no ve sus propios counters de tokens desde el interior de la
-sesión: estos datos salen del proxy (LiteLLM) o del servidor vLLM.
+Fuente: contadores Prometheus del vLLM (`qwen38-nvfp4-8001`, `:8001/metrics`)
++ serie de throughput del engine (1 línea cada 10 s en `docker logs`),
+recortada a la ventana de trabajo **2026-08-19 06:47 → 2026-08-20 12:50**.
+Cobertura: stages 3 (noche) → 7 + SEO. El día 1 (18/08 17:24 → 19/08 06:47)
+fue servido por una instancia anterior de vLLM cuyos logs no se conservaron
+(LiteLLM sin persistencia de gastos; journald sin tokens por request).
 
-| Métrica                      | Valor | Dónde salir |
-|------------------------------|-------|-------------|
-| Requests (llamadas a modelo) |       | LiteLLM → Spend/Logs (`/spend/logs`), filtrar por `spark-litellm/qwen3.8-27b-nvfp4-vllm` |
-| Prompt tokens (suma)         |       | mismo endpoint (`usage` por request) |
-| Completion tokens (suma)     |       | ibidem |
-| Coste (si aplica)            |       | ibidem |
-| TTFT p50 / p99               |       | vLLM Prometheus (`/metrics` con `--enable-metrics`): `vllm:time_to_first_token_seconds` |
-| Inter-token latency          |       | `vllm:time_per_output_token_seconds` |
-| **Tokens/s promedio (output)** |     | completion tokens / tiempo ocupado por el modelo (NO por tiempo de muro: hay interacciones humanas y ejecución de herramientas entre llamadas) |
-| Peak concurrent requests     |       | `vllm:num_requests_running` |
+| Métrica | Valor | Nota |
+|---------|-------|------|
+| Requests con TTFT | **714** | `vllm:time_to_first_token_seconds_count` (incluye el chat de métricas al final; ~700 del experimento) |
+| Prompt tokens enviados | **81,08 M** | `vllm:prompt_tokens_total`; ≈ **114 K/request** (contexto grande reenviado por llamada) |
+| prompt tokens REALMENTE prefilled | **3,18 M** | integrado de la serie 10 s; el resto lo cubrió el prefix cache |
+| **Prefix-cache hit rate** | **93,6 %** | ahorro de cómputo ≈ **25×** en prefill |
+| Generation tokens | **728 K** (ventana) · 862 K (contador al 16:20, incluye el chat posterior) | el delta ≈ tokens de la conversación de métricas |
+| **Tokens/s de generación (modelo ocupado)** | **≈ 17,8** | 728 K / 683 min; streams sostenidos 11–13 tok/s (config base del modelo: 11,1 single / 138 @16 concurrentes) |
+| TTFT promedio | **8,3 s** | 5915,7 s / 714 (prefill de la cola no cachearda de ~114 K) |
+| Tiempo del GPU ocupado | **11,4 h** (93,5 % de la ventana) | engine con ≥1 request running |
+| Speculative decoding DSpark k=14 | 318.855 pasos draft → **542.602 tokens aceptados** (1,70/paso) | `vllm:spec_decode_num_*` |
+| Preemptions | 0 | KV FP8, GPU_UTIL 0,85, 64 GB shm |
 
-Notas metodológicas:
-- "Tiempo del experimento" ≠ "tiempo de generación": entre dos llamadas
-  hay ejecución de tests/QA (minutos) y respuesta humana (horas). Para
-  tokens/s real, usar sólo la suma de `completion_tokens / latencia` por
-  request ponderada, o el histograma de vLLM.
-- Si LiteLLM registra por request: `tokens/s ≈ Σ completion_tokens / Σ
-  (completion_tokens / rate_reported)`.
-- Snapshot útil: exportar los logs de LiteLLM del rango
-  2026-08-18T17:00 → 2026-08-20T11:30 a CSV.
+Lectura: de los 81 M de tokens de context enviados, al GPU llegaron a
+prefill 3,2 M (cache); el trabajo real de decodificación fue ≈ 0,73 M de
+tokens generados en 11,4 h de GPU ocupado → **17,8 tok/s efectivos**,
+muy lejos del techo del hardware (250+ tok/s @16 concurrentes) porque el
+agente trabaja en streaming serial (1 request a la vez, bursts).
+
+Reproducción:
+```sh
+curl -s localhost:8001/metrics | grep -E "vllm:(prompt|generation|time_to_first_token|spec_decode)_.*"
+docker logs qwen38-nvfp4-8001 | grep "loggers.py:310"   # serie 10s para integrar
+```

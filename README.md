@@ -14,7 +14,8 @@ jugó, reportó bugs de jugada ("no encuentro la salida", "el jefe no cae") y
 dio la dirección. Sin assets, sin librerías, sin build step: es puro
 HTML + módulos ES. Ver `EXPERIMENTS.md` (cronología por commit, métricas,
 12 bugs hallados por la QA del agente y la planilla de datos de inferencia)
-y `CHANGELOG.md` para el registro técnico etapa por etapa.
+y `CHANGELOG.md` para el registro técnico etapa por etapa. (Los tokens
+medidos viven en `EXPERIMENTS.md`.)
 
 ## Ejecutar
 
