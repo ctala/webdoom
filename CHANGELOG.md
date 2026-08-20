@@ -330,3 +330,28 @@ Tests: 144 pasando (+13: mapa/jefe/enfurecimiento/objetivo/brújula/arcos
 de salida/pool). Bench stage7 (foso: Warden + escoltas + plasma + HUD):
 **1.350 ms/frame** (budget 16.66). QA: sweep CLEAN, playthrough PASS
 (MENÚ→E1M1→E2M1→E3M1 jefe→WON). Frames `_qa/s..v`.
+
+## Stage 8 (cierre) — Repo público, deploy y registro del experimento
+- **GitHub público**: <https://github.com/ctala/webdoom> (repo inicializado
+  "como corresponde": `.gitignore`, README, CHANGELOG, sin secretos —
+  escaneo de tokens/keys en el árbol; frames QA excluidas vía gitignore).
+- **Deploy en Cloudflare Pages**: <https://webdoom-blu.pages.dev/> —
+  configuración de páginas estáticas: **build command vacío**, output `/`
+  (el root del repo ES el sitio; verificado post-deploy: 200 en root,
+  módulos JS con MIME `application/javascript`, `og.png` y `favicon.png`
+  sirviendo).
+- **SEO / compartir URL**: `og:title/description/image` + Twitter card
+  (`/og.png` = screenshot de la pantalla de título) y favicon con la cara
+  del marine (también mata el 404 de favicon que ruidaba el sweep).
+- **`EXPERIMENTS.md`**: registro del experimento — cronología por commit
+  (45.8 h cronológicas, ~21-22 h entre commits, 14 commits, 6,925 SLOC,
+  144 tests), los 12 bugs con su método de detección (4 reportados por la
+  persona jugando, 8 por la QA del agente) y **datos de inferencia medidos**
+  desde vLLM `:8001/metrics` + serie 10 s del engine (ventana
+  19/08 06:47 → 20/08 12:50): 714 requests, 81.08 M tokens de prompt
+  enviados, 3.18 M prefilled reales (prefix-cache 93.6 % ≈ 25× de ahorro),
+  728 K generados (≈ 17.8 tok/s con GPU ocupado; el modelo rinde 250+ @16
+  concurrentes pero el agente va serial), TTFT 8.3 s, 11.4 h GPU busy
+  (93.5 %), DSpark k=14 con 1.70 tokens aceptados/paso (542.6 K aceptados
+  en 318.9 K pasos), 0 preemptions. Benchmark del modelo:
+  <https://benchmarks.cristiantala.com/modelo/qwen-3.8-27b/>.

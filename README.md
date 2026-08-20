@@ -1,5 +1,7 @@
 # WebDoom
 
+**Jugar → https://webdoom-blu.pages.dev/** (Cloudflare Pages)
+
 FPS estilo Doom completo en el navegador. Cero dependencias, cero assets
 binarios: texturas, sprites, sonido y música 100% procedurales
 (Canvas2D offscreen + WebAudio). Motor propio sobre un buffer de píxeles
@@ -7,15 +9,29 @@ empacados 0xAABBGGRR (480x270, escalado 2x, 60 Hz en paso fijo).
 
 ## Origen
 
-Este proyecto es un **experimento con Spark usando Qwen3.8 (27B, nvfp4 via
-vLLM)**: todo el motor, los niveles, el HUD, el audio y hasta la suite de QA
-fue construido por el modelo en 7 etapas, de forma autónoma; la persona solo
-jugó, reportó bugs de jugada ("no encuentro la salida", "el jefe no cae") y
-dio la dirección. Sin assets, sin librerías, sin build step: es puro
-HTML + módulos ES. Ver `EXPERIMENTS.md` (cronología por commit, métricas,
-12 bugs hallados por la QA del agente y los datos de inferencia medidos)
-y `CHANGELOG.md` para el registro técnico etapa por etapa. (Los tokens
-medidos viven en `EXPERIMENTS.md`.)
+Este proyecto es un **experimento con Spark usando Qwen3.8 27B (NVFP4 vía
+vLLM, [benchmark del modelo](https://benchmarks.cristiantala.com/modelo/qwen-3.8-27b/))**:
+todo el motor, los niveles, el HUD, el audio y hasta la suite de QA fue
+construido por el modelo en 7 etapas, de forma autónoma; la persona solo
+jugó, reportó bugs de jugada ("no encuentro la salida", "el jefe no cae")
+y dio la dirección. Sin assets, sin librerías, sin build step: es puro
+HTML + módulos ES.
+
+Números de cabecera (detalle y fuentes en `EXPERIMENTS.md`):
+
+- **45.8 h** cronológicas de experimento (≈ 21-22 h entre commits, el resto
+  jugando/reportando), 18/08 17:24 → 20/08 11:11 · **14 commits** ·
+  **6,925 SLOC** · **144 tests** · 0 dependencias · 0 assets binarios.
+- Inferencia (ventana 19/08 06:47 → 20/08 12:50, contadores vLLM):
+  **714 requests** · **81.08 M tokens de prompt** enviados
+  (solo **3.18 M** prefilled de verdad — **prefix-cache 93.6 %**, ≈25×
+  menos cómputo) · **728 K tokens generados** (≈ **17.8 tok/s** con el GPU
+  ocupado; streams sostenidos 11-13, el modelo rinde 250+ @16 concurrentes
+  pero el agente va serial) · **TTFT 8.3 s** promedio · **11.4 h de GPU
+  ocupado** (93.5 % de la ventana).
+- **12 bugs** hallados por la QA del agente (4 reportados por la persona
+  jugando); el grave: el pool de proyectiles nunca reciclaba y tras ~32
+  tiros las balas dejaban de existir en silencio.
 
 ## Ejecutar
 
@@ -33,6 +49,9 @@ Sitio 100% estático: **Cloudflare Pages** (o cualquier host estático).
 Sin build command, sin output directory aparte — el root del repo es el
 sitio (`index.html` + `src/` + `levels/`). Funciona tal cual; `?debug` no
 interfiere (solo expone un handle extra).
+
+- **Vivo**: <https://webdoom-blu.pages.dev/>
+- **Código**: <https://github.com/ctala/webdoom> (público)
 
 ## Controles
 
