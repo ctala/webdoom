@@ -34,4 +34,6 @@ export class Pool {
   }
 
   get size() { return this.items.length; }
+  /** How many slots are back in the free list (diagnostics/tests). */
+  get freeCount() { return this.top; }
 }

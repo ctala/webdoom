@@ -1,6 +1,9 @@
 // TAB automap: opaque panel centered over the scene. Draws only cells the
 // player has seen (this.explored), the player with heading, live enemies,
 // the exit switch and a scale of 6 px per cell (32x24 map -> 192x144).
+// The objective marker is drawn even on unexplored ground: it is guidance.
+
+import { currentObjective } from './objective.js';
 
 const S = 6;
 
@@ -65,6 +68,18 @@ export function renderAutomap(game) {
     if (!seen(cx, cy)) continue;
     const ex0 = b.x0 + cx * S, ey0 = b.y0 + cy * S;
     for (let dy = 2; dy < S - 1; dy++) for (let dx = 2; dx < S - 1; dx++) buf[(ey0 + dy) * W + (ex0 + dx)] = C_ENEMY;
+  }
+  // objective marker (diamond) — always shown, even on unexplored cells
+  const obj = currentObjective(game);
+  if (obj) {
+    const gxp = b.x0 + (obj.x * S) | 0, gyp = b.y0 + (obj.y * S) | 0;
+    for (let dy = -2; dy <= 2; dy++) {
+      const half = 2 - Math.abs(dy);
+      for (let dx = -half; dx <= half; dx++) {
+        const xx = gxp + dx, yy = gyp + dy;
+        if (xx >= b.x0 && xx <= b.x1 && yy >= b.y0 && yy <= b.y1) buf[yy * W + xx] = obj.color;
+      }
+    }
   }
   // player dot + heading tick
   const p = game.player;

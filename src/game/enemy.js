@@ -16,8 +16,16 @@ export const ENEMY_DEF = {
   demon:     { hp: 85, speed: 3.4, range: 1.25, kind: 'melee', dmg: 22, cd: 0.95, r: 0.34, viewH: 1.08 },
   commander: { hp: 70, speed: 2.1, range: 9.0, kind: 'hitscan', pellets: 3, dmg: 21, cd: 1.5, r: 0.3, viewH: 0.95 },
   caco:      { hp: 95, speed: 1.7, range: 9.0, kind: 'ranged', pKind: 'bolt', dmg: 20, cd: 1.4, r: 0.32, viewH: 1.05, lift: 0.35 },
+  // THE WARDEN (E3M1): hovers, 3-way bolt spray; below 45% hp it enrages
+  // (faster attack, +50% bolt damage).
+  boss:      { hp: 450, speed: 1.4, range: 11.0, kind: 'ranged', pKind: 'bolt', dmg: 24, cd: 1.7, r: 0.45, viewH: 1.4, lift: 0.5, spread: 3 },
 };
 const SIGHT = 13.5;
+
+/** True while the Warden is below 45% hp (fires faster, hits harder). */
+export function isEnraged(e) {
+  return e.type === 'boss' && e.hp > 0 && e.hp < e.maxHp * 0.45;
+}
 
 export function setupEnemies(game) {
   game.enemyCount = 0;
@@ -50,18 +58,24 @@ function stepEnemy(e, def, nx, ny, dist, dt, view, map) {
 export function fireEnemyProjectile(game, e) {
   const def = ENEMY_DEF[e.type];
   const p = game.player;
-  const pr = game.projectiles.acquire();
-  if (!pr) return;
+  const enraged = isEnraged(e);
+  const dmg = def.dmg * (enraged ? 1.5 : 1);
+  const n = def.spread || 1;
   const dx = p.x - e.x, dy = p.y - e.y;
-  const d = Math.hypot(dx, dy) || 1;
+  const base = Math.atan2(dy, dx);
   // small inaccuracy (±~1.1deg) so throws usually connect at mid range
-  const a = Math.atan2(dy, dx) + (((dx * 9301 + dy * 49297 + (e.x * 7) | 0) % 128 - 64) * 0.02) / 64;
+  const acc = (((dx * 9301 + dy * 49297 + (e.x * 7) | 0) % 128 - 64) * 0.02) / 64;
   const sp = def.pKind === 'bolt' ? 8 : 6.5;
-  pr.x = e.x; pr.y = e.y;
-  pr.vx = Math.cos(a) * sp; pr.vy = Math.sin(a) * sp;
-  pr.kind = def.pKind; pr.dmg = def.dmg; pr.life = 2.4;
-  pr.owner = 0;
-  pr.active = true;
+  for (let k = 0; k < n; k++) {
+    const pr = game.projectiles.acquire();
+    if (!pr) return;
+    const a = base + acc + (n === 1 ? 0 : (k - (n - 1) / 2) * 0.16);
+    pr.x = e.x; pr.y = e.y;
+    pr.vx = Math.cos(a) * sp; pr.vy = Math.sin(a) * sp;
+    pr.kind = def.pKind; pr.dmg = dmg; pr.life = 2.4;
+    pr.owner = 0;
+    pr.active = true;
+  }
 }
 
 /**
@@ -113,8 +127,13 @@ export function updateEnemies(game, dt) {
       if (ns === ST.DEATH) {
         game.stats.kills++;
         game.emitSound(e.x, e.y, 7);
-        game.spawnBlood(e.x, e.y, 12, Math.atan2(game.player.y - e.y, game.player.x - e.x), 4.5);
+        const boss = e.type === 'boss';
+        game.spawnBlood(e.x, e.y, boss ? 26 : 12, Math.atan2(game.player.y - e.y, game.player.x - e.x), boss ? 6 : 4.5);
         game.sfx('edead');
+        if (boss) {
+          game.sfx('bossdie');
+          game.setMessage('THE WARDEN FALLS - THE EXIT IS OPEN');
+        }
       } else if (ns === ST.ALERT) {
         game.emitSound(e.x, e.y, 4);
       }
@@ -167,7 +186,7 @@ export function updateEnemies(game, dt) {
         e.animT += dt;
         if (def.kind === 'ranged') {
             if (e.cd <= 0 && sees) {
-              e.cd = def.cd; e.anim = 'atk'; e.animT = 0;
+              e.cd = def.cd * (isEnraged(e) ? 0.55 : 1); e.anim = 'atk'; e.animT = 0;
               fireEnemyProjectile(game, e);
               game.emitSound(e.x, e.y, 3);
               game.sfx('eshoot');
@@ -233,4 +252,9 @@ export function damageEnemy(game, e, dmg) {
   if (e.state === ST.DEATH || e.state === ST.CORPSE) return;
   e.hp -= dmg;
   e.justHurt = true;
+  if (e.type === 'boss' && !e.enraged && isEnraged(e)) {
+    e.enraged = true;
+    game.setMessage('THE WARDEN IS ENRAGED');
+    game.sfx('enrage');
+  }
 }

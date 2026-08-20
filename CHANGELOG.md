@@ -284,7 +284,49 @@ abierto + disparando): **0.685 ms/frame** (budget 16.66). QA navegador:
 sweep CLEAN + playthrough PASS (WON). Frames `_qa/n..r` (menú, objetivo,
 pista de puerta, automapa, salida).
 
-### Backlog (nuevo)
-- **Boss final**: el usuario esperaba un jefe; el caco de la sala de
-  salida de E2M1 es lo más cercano. Candidato: E3M1 con un caco
-  reforzado/jefe propio antes de la victoria.
+## Stage 7 — Brújula de objetivo, THE WARDEN (jefe E3M1) y salida legible
+- **`src/game/objective.js`** (puro, compartido): `currentObjective(game)`
+  resuelve en prioridad — keycard ausente → jefe vivo (niveles boss) →
+  switch de salida — con etiqueta + color; `compassInfo` da rumbo relativo
+  ([-PI,PI]) + distancia. HUD, automapa y QA leen la MISMA función: nadie
+  puede apuntar a cosas distintas.
+- **Brújula + banner persistente** (feedback del jugador: "no sabía cuál
+  era la salida, se parecía a recargar vida"): triángulo en el borde
+  superior se desliza hacia el objetivo (0 rad = delante) + distancia en
+  unidades, color del tipo; banner permanente "FIND THE RED KEYCARD" /
+  "DEFEAT THE WARDEN" / "REACH THE EXIT" (H-38) que el mensaje transitorio
+  y la pista de uso reemplazan. En el automapa, rombo del objetivo SIEMPRE
+  visible (aunque la celda no haya explorada).
+- **THE WARDEN** (`ENEMY_DEF.boss`, código de mapa `J`): hp450, flota
+  (viewH 1.4), ráfaga de 3 bolts (±8.8°) cd1.7; a <45% hp se ENFURECE
+  (flag: mensaje + sfx `enrage`) → cadencia ×0.55 y bolts +50% (36 dmg).
+  Muerte: sfx `bossdie` + sangre 26 + "THE WARDEN FALLS - THE EXIT IS
+  OPEN". `itemSprites`/`sprites.js`: cuerpo carmesí 32x32 con corona de
+  8 púas, ojos, núcleo fundido que parpadea al atacar, burst de brasas en
+  muerte; cadáver propio.
+- **E3M1 THE PIT** (32x24, theme 2, último nivel): nicho inicial → puerta
+  D → foso abierto con 4 pilares, Warden al centro (J 15,11), 3 escoltas
+  (2 demonios + imp), 11 ítems (2 plasma, medpacks, escopeta, armadura)
+  y switch X al norte. **La salida está SELLADA hasta matar al Warden**
+  (`interact.js`: "THE WARDEN GUARDS THE EXIT" + sfx denied); al caer,
+  sale y → **WON**.
+- **Bug grave encontrado en el QA del jefe: el pool de proyectiles (y el
+  de partículas de sangre) NUNCA devolvía sus slots (`release()`).**
+  Tras ~32 tiros totales (juego + enemigos) el free-list se agotaba y
+  `acquire()` devolvía `null` en silencio: el plasma del jugador y los
+  bolts de TODOS los enemigos dejaban de existir sin error. Fix:
+  `release()` en los 4 puntos de muerte del proyectil + `updateParticles`;
+  `Pool.freeCount` + test de regresión (150 disparos, el pool nunca se
+  agota). El bot de QA también filtraba slots al "tanquear" (fix aplicado).
+- **Salida legible de verdad**: el marcador ahora es un arco verde
+  brillante con FLECHA y **placa con texto "EXIT"** (micro-fuente 5px en
+  el sprite) — el cruz-verde antigua se parecía al medpack. (Feedback
+  directo del jugador.)
+- Playthrough QA ahora mata al jefe de verdad: bot se acerca por el sur,
+  plasma (tecla real Space) apuntando cada 70 ms; el Warden cae en ~9.5 s;
+  salida → WON completo: 0 errores.
+
+Tests: 144 pasando (+13: mapa/jefe/enfurecimiento/objetivo/brújula/arcos
+de salida/pool). Bench stage7 (foso: Warden + escoltas + plasma + HUD):
+**1.350 ms/frame** (budget 16.66). QA: sweep CLEAN, playthrough PASS
+(MENÚ→E1M1→E2M1→E3M1 jefe→WON). Frames `_qa/s..v`.

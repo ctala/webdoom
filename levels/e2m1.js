@@ -5,6 +5,7 @@
 
 export const E2M1 = {
   name: 'E2M1 ARMORY',
+  needsKey: 'keyB',
   objective: 'FIND THE BLUE KEYCARD, THEN REACH THE EXIT',
   startAng: Math.PI / 2, // face south toward the hall door
   theme: 1,

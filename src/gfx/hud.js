@@ -4,6 +4,7 @@
 
 import { blit, blitCenter } from './font5x7.js';
 import { scanUse } from '../game/interact.js';
+import { currentObjective, compassInfo } from '../game/objective.js';
 
 // Packed colors (0xAABBGGRR)
 const C_BG = (0xff << 24) | (0x14 << 16) | (0x14 << 8) | 0x14; // near-black strip
@@ -92,7 +93,22 @@ export function renderHud(game) {
     if (i === 0 && p.keyR) { for (let y = TOP + 7; y < TOP + 17; y++) for (let x = kx + 2; x < kx + 12; x++) buf[y * W + x] = C_KEYR; }
     if (i === 1 && p.keyB) { for (let y = TOP + 7; y < TOP + 17; y++) for (let x = kx + 2; x < kx + 12; x++) buf[y * W + x] = C_KEYB; }
   }
-  // proximity hint (steady cyan) or transient message (amber) — never both
+  // top-edge compass pointer to the current objective (always drawn while
+  // there is one): triangle slides across the top toward the target's
+  // screen direction + distance in units. 0 rad = dead ahead.
+  const obj = currentObjective(game);
+  if (obj) {
+    const { rel, dist } = compassInfo(game, obj);
+    const cx = Math.round(W / 2 + Math.max(-1, Math.min(1, rel / 2.2)) * (W / 2 - 16));
+    for (let r = 0; r < 5; r++) {
+      for (let x = -r; x <= r; x++) {
+        const xx = cx + x;
+        if (xx >= 0 && xx < W) buf[(5 + r) * W + xx] = obj.color;
+      }
+    }
+    blit(buf, W, String(Math.round(dist)), Math.max(4, Math.min(W - 24, cx - 10)), 11, 1, obj.color);
+  }
+  // banner priority: transient message > use-hint > persistent objective
   let hint = '';
   const hit = scanUse(game);
   if (hit) {
@@ -106,6 +122,8 @@ export function renderHud(game) {
     blitCenter(buf, W, msg, H - 44, msg.length * 12 > W - 8 ? 1 : 2, C_MSG);
   } else if (hint) {
     blitCenter(buf, W, hint, H - 38, 1, C_HINT);
+  } else if (obj) {
+    blitCenter(buf, W, obj.label, H - 38, 1, obj.color);
   }
 }
 

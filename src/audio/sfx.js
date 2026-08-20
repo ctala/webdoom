@@ -76,6 +76,8 @@ export const SFX_BANK = {
   pickup: (t0) => { tone('sine', 660, 990, t0, 0.12, 0.2); },
   denied: (t0) => { tone('square', 110, 70, t0, 0.16, 0.3); },
   complete: (t0) => { tone('sine', 520, 780, t0, 0.12, 0.25); tone('sine', 780, 1170, t0 + 0.13, 0.18, 0.25); },
+  enrage: (t0) => { tone('sawtooth', 90, 230, t0, 0.5, 0.3); noise(0.4, 0.2, 500, t0); },
+  bossdie: (t0) => { tone('sawtooth', 300, 38, t0, 1.1, 0.4); noise(0.9, 0.3, 700, t0); },
 };
 
 /** Play one sfx by name; silent when no running context exists. */

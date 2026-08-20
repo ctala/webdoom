@@ -209,6 +209,42 @@ function paintCaco(c, set, f) {
   } else { blob(c, 16, 26, 7, 3.4, '#4a2a63'); blob(c, 16, 27, 5.5, 1.6, '#4e1410'); }
 }
 
+function paintBoss(c, set, f) {
+  let cy = 13, r = 11;
+  if (set === 'idle') cy += [0, -2][f & 1];
+  if (set === 'pain') { cy += 2; r = 10; }
+  if (set === 'death') {
+    const t = f / 3;
+    r = 11 * (1 - t * 0.75);
+    cy = 14 + t * 7;
+    for (let k = 0; k < 10; k++) { // ember burst
+      const a = k / 10 * Math.PI * 2 + f * 0.7;
+      dot(c, 16 + Math.cos(a) * (9 + f * 5), 15 + Math.sin(a) * (9 + f * 5) * 0.7, 1.9 - f * 0.3, '#d0703c');
+    }
+    blob(c, 16, 28, 6 + f * 2.5, 1.8, '#4a100c');
+  }
+  if (set !== 'corpse') {
+    for (let k = 0; k < 8; k++) { // crown of spikes
+      const a = k / 8 * Math.PI * 2 - Math.PI / 2;
+      spike(c, 16 + Math.cos(a) * r * 0.92, cy + Math.sin(a) * r * 0.92, a, 5 + (k % 3), 3, '#e05540');
+    }
+    blob(c, 16, cy, r, r * 0.94, set === 'pain' ? '#701c16' : '#92281e');
+    blob(c, 16, cy - 2, r * 0.62, r * 0.55, '#b8402e');
+    const flare = set === 'atk' && f >= 2;
+    dot(c, 16, cy + 1, 3.4 + f * 0.4, flare ? '#ffd060' : '#ff9030'); // molten core
+    dot(c, 16, cy + 1, 2, flare ? '#fff0b0' : '#ffc860');
+    dot(c, 11.5, cy - 3.5, 2, '#ffd840'); // eyes
+    dot(c, 20.5, cy - 3.5, 2, '#ffd840');
+    c.fillStyle = '#200a08';
+    c.fillRect(10.6, cy - 4.4, 1.8, 1.8);
+    c.fillRect(19.6, cy - 4.4, 1.8, 1.8);
+    if (set === 'atk' && f >= 1) {
+      dot(c, 16, cy + 6, 1.8 + f * 0.9, f >= 3 ? '#ffb040' : '#ff7040');
+      if (f >= 3) dot(c, 16, cy + 6, 3, '#ffd070');
+    }
+  }
+}
+
 function paintCorpse(c, t) {
   c.clearRect(0, 0, SZ, SZ);
   const map = {
@@ -216,6 +252,7 @@ function paintCorpse(c, t) {
     demon: ['#4e1713', '#5e1410', 5],
     commander: ['#414c58', '#3a0d0a', 4],
     caco: ['#4a2a63', '#4e1410', 5],
+    boss: ['#92281e', '#5e1410', 8],
   };
   const [body, blood, seed] = map[t];
   const h1 = (i) => ((i * 9301 + seed * 49297) % 233280) / 233280;
@@ -228,7 +265,7 @@ function paintCorpse(c, t) {
   }
 }
 
-const PAINT = { imp: paintImp, demon: paintDemon, commander: paintCommander, caco: paintCaco };
+const PAINT = { imp: paintImp, demon: paintDemon, commander: paintCommander, caco: paintCaco, boss: paintBoss };
 const SETS = { idle: 1, walk: 4, atk: 4, pain: 2, death: 4, corpse: 1 };
 
 /** Small 8x8 glowing orbs for projectiles (fireball / caco bolt). */

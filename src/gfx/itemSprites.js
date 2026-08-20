@@ -59,11 +59,44 @@ function paintKey(c, body, dark) {
   c.fillStyle = dark; c.fillRect(10, 20, 7, 2); // stripe
 }
 
+const MICRO = {
+  E: ['XXXX', 'X...', 'XXX.', 'X...', 'XXXX'],
+  X: ['X..X', 'X..X', '.X.X', '.X.X', 'X..X'],
+  I: ['XXX', '.X.', '.X.', '.X.', 'XXX'],
+  T: ['XXXX', '.XX.', '.XX.', '.XX.', '.XX.'],
+};
+
+/** Tiny 5-tall bitmap text into the 2d context (sprite-space pixels). */
+function paintText(c, msg, x, y, color) {
+  c.fillStyle = color;
+  let cx = x;
+  for (const ch of msg) {
+    const g = MICRO[ch];
+    for (let r = 0; r < 5; r++) for (let col = 0; col < g[r].length; col++) {
+      if (g[r][col] === 'X') c.fillRect(cx + col, y + r, 1, 1);
+    }
+    cx += g[0].length + 1;
+  }
+}
+
 function paintExit(c) {
-  c.fillStyle = '#101810'; c.beginPath(); c.ellipse(16, 18, 9, 10, 0, 0, Math.PI * 2); c.fill();
-  c.fillStyle = '#38ff50'; c.beginPath(); c.ellipse(16, 17, 7.5, 8.5, 0, 0, Math.PI * 2); c.fill(); // green ring
-  c.fillStyle = '#0c1c0e'; c.beginPath(); c.ellipse(16, 17, 4.5, 5.5, 0, 0, Math.PI * 2); c.fill();
-  c.fillStyle = '#7cff88'; c.fillRect(14.8, 12.5, 2.4, 9); c.fillRect(12.5, 15.8, 7, 2.4); // cross = goal
+  // Tall glowing arch with an up arrow and an EXIT plaque — must NOT read
+  // as a medkit cross (player feedback: the old cross looked like health).
+  c.fillStyle = '#0c1c0e'; c.beginPath(); c.ellipse(16, 20, 11.5, 11, 0, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#1e5c28'; // dark arch body
+  c.beginPath();
+  c.moveTo(6, 30); c.lineTo(6, 15); c.quadraticCurveTo(6, 5, 16, 5); c.quadraticCurveTo(26, 5, 26, 15); c.lineTo(26, 30);
+  c.closePath(); c.fill();
+  c.fillStyle = '#3cff5a'; // glowing doorway
+  c.beginPath();
+  c.moveTo(9, 30); c.lineTo(9, 16); c.quadraticCurveTo(9, 8, 16, 8); c.quadraticCurveTo(23, 8, 23, 16); c.lineTo(23, 30);
+  c.lineTo(19.5, 30); c.lineTo(19.5, 17); c.quadraticCurveTo(19.5, 11, 16, 11); c.quadraticCurveTo(12.5, 11, 12.5, 17); c.lineTo(12.5, 30);
+  c.closePath(); c.fill();
+  c.fillStyle = '#0c1c0e'; // dark up arrow on the glow (contrast)
+  c.fillRect(14.9, 15.5, 2.2, 4);
+  c.beginPath(); c.moveTo(16, 10.5); c.lineTo(12.2, 16.5); c.lineTo(19.8, 16.5); c.closePath(); c.fill();
+  c.fillStyle = '#0c1c0e'; c.fillRect(6, 20, 20, 6); // sign plate
+  paintText(c, 'EXIT', 7, 21, '#7dff8e');
 }
 
 const PAINT = {

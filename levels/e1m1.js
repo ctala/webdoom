@@ -4,6 +4,7 @@
 
 export const E1M1 = {
   name: 'E1M1 HANGAR',
+  needsKey: 'keyR',
   objective: 'FIND THE RED KEYCARD, THEN THE EXIT',
   startAng: 0,
   theme: 0,

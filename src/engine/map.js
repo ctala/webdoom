@@ -8,6 +8,7 @@
 //   'i' imp          'd' demon          'c' commander      'v' cacodemon
 //   'h' +health      'g' +armor         'm' pistol ammo    's' shotgun shells
 //   'p' plasma cells 'k' red key        'b' blue key       '.' open floor
+//   'J' the Warden (E3M1 boss)
 
 export const W_BRICK = 1;
 export const W_TECH = 2;
@@ -28,7 +29,7 @@ const WALLS = new Map([
   ['L', [W_STONE, H_LOW]],
 ]);
 
-const ENT_CODES = { i: 'imp', d: 'demon', c: 'commander', v: 'caco', h: 'health', g: 'armor', m: 'ammoP', s: 'ammoS', p: 'ammoPl', k: 'keyR', b: 'keyB' };
+const ENT_CODES = { i: 'imp', d: 'demon', c: 'commander', v: 'caco', J: 'boss', h: 'health', g: 'armor', m: 'ammoP', s: 'ammoS', p: 'ammoPl', k: 'keyR', b: 'keyB' };
 
 export function parseLevel(rows, name = '') {
   const gh = rows.length;

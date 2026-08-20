@@ -25,6 +25,7 @@ import { renderHud, renderMenu, renderReticle } from '../gfx/hud.js';
 import { renderAutomap } from './automap.js';
 import { E1M1 } from '../../levels/e1m1.js';
 import { E2M1 } from '../../levels/e2m1.js';
+import { E3M1 } from '../../levels/e3m1.js';
 
 export const DEC_MAX = 128;
 const _decRay = { perp: 0, side: 0, cellX: 0, cellY: 0, hitId: 0, texX: 0 };
@@ -66,7 +67,7 @@ export class Game {
     for (let i = 0; i < 32; i++) this.sound[i] = { x: 0, y: 0, vol: 0 };
     this.soundLen = 0;
     this.levelIdx = 0;
-    this.levels = [E1M1, E2M1];
+    this.levels = [E1M1, E2M1, E3M1];
     this.message = { text: '', t: 0 };
     this.stats = { kills: 0, totalKills: 0, secrets: 0, totalSecrets: 0, time: 0, levelTime: 0 };
     this.input = { up: false, down: false, left: false, right: false, run: false, fire: false, use: false, map: false };

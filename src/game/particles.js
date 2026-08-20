@@ -40,14 +40,16 @@ export function spawnBlood(game, x, y, n, dirAng, power = 3.5) {
 }
 
 export function updateParticles(game, dt) {
-  game.particles.each((q) => {
+  const pool = game.particles;
+  pool.each((q) => {
     if (!q.active) return;
+    const dead = () => { q.active = false; pool.release(q); };
     q.life -= dt;
-    if (q.life <= 0) { q.active = false; return; }
+    if (q.life <= 0) { dead(); return; }
     q.x += q.vx * dt; q.y += q.vy * dt;
     q.vz -= GRAV * dt;
     q.z += q.vz * dt;
-    if (q.z <= -1.02) q.active = false;
+    if (q.z <= -1.02) dead();
   });
 }
 

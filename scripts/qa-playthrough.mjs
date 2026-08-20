@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // Full-process QA: plays the REAL page from title screen to WON.
-// A "bot" runs in-page: WASD via real KeyboardEvents, E/Enter via real
-// KeyboardEvents, steering via game.turn() (mouse-look can't be emulated),
-// and pathfinding with the game's own AStar over a door-passable grid.
-// Doors are opened by pressing E with the right keycard, enemies are
-// tanked (hp=1e5) - this QA is about navigation and interaction, not combat.
+// A "bot" runs in-page: WASD via real KeyboardEvents, E/Space/Enter via real
+// KeyboardEvents, steering by aiming (mouse-look can't be emulated), and
+// pathfinding with the game's own AStar over a door-passable grid.
+// Doors are opened by pressing E with the right keycard; the E3M1 boss is
+// killed with real fire input. Enemies are otherwise tanked (hp=1e5) - this
+// QA is about navigation, interaction and progression, not combat skill.
 //
 // Usage: node scripts/qa-playthrough.mjs [url]
 // Exit 0 = WON reached with no page errors. Exit 1 = failure (logs + frame).
@@ -60,6 +61,9 @@ ws.onmessage = (ev) => {
     errs.push(`[EXC] ${m.params.exceptionDetails?.description || m.params.exceptionDetails?.text || ''}`.slice(0, 300));
   } else if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') {
     errs.push(`[console.error] ${m.params.args.map((a) => a.value ?? a.description ?? '').join(' ')}`.slice(0, 300));
+  } else if (m.method === 'Runtime.consoleAPICalled') {
+    const first = m.params.args[0]?.value;
+    if (typeof first === 'string' && first.startsWith('[bot] ')) console.log(first);
   }
 };
 const send = (method, params = {}) => new Promise((res) => { const i = ++id; pend.set(i, res); ws.send(JSON.stringify({ id: i, method, params })); });
@@ -84,7 +88,7 @@ if (await ev(`typeof window.__wd`) !== 'object') {
 await ev(`
 window.__bot = { log: [] };
 const g = window.__wd;
-const L = (m) => { window.__bot.log.push(m); };
+const L = (m) => { window.__bot.log.push(m); console.log('[bot] ' + m); };
 async function sleepMs(ms) { return new Promise((r) => setTimeout(r, ms)); }
 function key(code, down) { window.dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', { code })); }
 // A* over a grid where doors are passable
@@ -140,7 +144,7 @@ async function walkTo(cells, label) {
     const ok = await waitUntil(() => Math.hypot(cx - g.player.x, cy - g.player.y) < 0.55, 20000, 'waypoint ' + c + ' (' + label + ')');
     key('KeyW', false);
     if (!ok) { L('stuck at waypoint ' + c + ' at (' + g.player.x.toFixed(2) + ',' + g.player.y.toFixed(2) + ') hp=' + g.player.hp); return false; }
-    g.player.hp = 1e5; g.projectiles.each((p) => { p.active = false; }); // tank: QA tests navigation, not combat
+    g.player.hp = 1e5; g.projectiles.each((p) => { if (p.active) { p.active = false; g.projectiles.release(p); } }); // tank: QA tests navigation, not combat (return slots to the pool!)
   }
   return true;
 }
@@ -180,6 +184,33 @@ window.__bot.exit = async () => {
   key('KeyE', true); await sleepMs(60); key('KeyE', false);
   const ok = await waitUntil(() => g.state === 'INTERM' || g.state === 'WON', 6000, 'exit triggered');
   return ok ? 'OK exit used, state=' + g.state : 'FAIL exit not triggered';
+};
+window.__bot.killBoss = async () => {
+  const e = g.enemies.find((x) => x.type === 'boss');
+  if (!e) return 'FAIL no boss on map';
+  L('the Warden: hp=' + e.hp + ' at (' + e.x.toFixed(1) + ',' + e.y.toFixed(1) + ')');
+  const p0 = pathTo(Math.floor(e.x), Math.min(21, Math.floor(e.y + 4))); // close from the south
+  if (!p0.n) return 'FAIL no path to the boss';
+  if (!(await walkTo(p0.cells, 'boss approach'))) return 'FAIL approach the boss';
+  g.switchWeapon(4); // plasma
+  key('Space', true); // real fire key
+  const t0 = Date.now();
+  while (Date.now() - t0 < 120000) {
+    if (g.state !== 'PLAY') return 'FAIL state left PLAY mid-boss: ' + g.state;
+    if (e.state === 5 || e.state === 6) break;
+    g.player.hp = 1e5; g.player.armor = 100; g.player.ammoPl = 200; // tank: QA tests the kill pipeline, not skill
+    g.player.ang = Math.atan2(e.y - g.player.y, e.x - g.player.x);
+    if ((Date.now() - t0) % 2000 < 80) {
+      let bolts = 0; g.projectiles.each((p) => { if (p.active && p.owner === 1) bolts++; });
+      let used = 0; g.projectiles.each((p) => { if (p.active) used++; });
+      L('t=' + ((Date.now() - t0) / 1000 | 0) + 's hp=' + e.hp + ' st=' + e.state + ' fire=' + g.input.fire + ' w=' + g.player.weapon + ' pl=' + g.player.ammoPl + ' bolts=' + bolts + ' used=' + used + ' cd=' + g.player.wpnCd.toFixed(3) + ' fr=' + g.frame + ' paused=' + g.paused + ' px=' + g.player.x.toFixed(2) + ',' + g.player.y.toFixed(2) + ' b=' + e.x.toFixed(2) + ',' + e.y.toFixed(2));
+    }
+    await sleepMs(70);
+  }
+  key('Space', false);
+  if (e.state !== 5 && e.state !== 6) return 'FAIL the Warden survived (hp=' + e.hp + ') fire=' + g.input.fire + ' w=' + g.player.weapon;
+  L('the Warden fell in ' + ((Date.now() - t0) / 1000).toFixed(1) + 's; ' + g.message.text);
+  return 'OK boss killed';
 };
 1`);
 
@@ -228,6 +259,20 @@ shot('e2m1_bluekey');
 if (!r.startsWith('OK')) fail(r);
 r = await step('E2M1:exit', 'window.__bot.exit()');
 shot('e2m1_exit');
+if (!r.startsWith('OK')) fail(r);
+// wait for the intermission to load E3M1 for real
+await sleep(3000);
+d = JSON.parse(await diag('interm2'));
+if (d.lvl !== 2) fail('intermission did not advance to E3M1: ' + JSON.stringify(d));
+log('interm→E3M1', 'OK');
+shot('e3m1_start');
+
+// ---- E3M1 (boss arena) ----
+r = await step('E3M1:boss', 'window.__bot.killBoss()');
+shot('e3m1_bossfall');
+if (!r.startsWith('OK')) fail(r);
+r = await step('E3M1:exit', 'window.__bot.exit()');
+shot('e3m1_exit');
 if (!r.startsWith('OK')) fail(r);
 d = JSON.parse(await diag('won'));
 if (d.state !== 'WON') fail('not WON: ' + JSON.stringify(d));

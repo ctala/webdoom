@@ -1,5 +1,7 @@
 // Player interaction with the world: E/U opens doors, secrets and the exit.
 
+import { bossAlive } from './objective.js';
+
 /** Collect door cells for the level (all four door kinds animate). */
 export function initDoors(game) {
   const dt = game.map.doorType;
@@ -72,6 +74,12 @@ export function useAction(game) {
     return;
   }
   if (hit.kind === 'exit') {
+    // boss levels: the Warden must fall first (its death unseals the exit)
+    if (game.levels[game.levelIdx].boss && bossAlive(game)) {
+      game.setMessage('THE WARDEN GUARDS THE EXIT');
+      game.sfx('denied');
+      return;
+    }
     levelComplete(game);
     return;
   }

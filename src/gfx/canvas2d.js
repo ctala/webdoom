@@ -4,8 +4,8 @@
 // - StubCtx is a minimal software 2d context for node (tests/bench):
 //   rects, closed-polygon fills, arcs/ellipses as polyline paths, strokes.
 // Both share a small interface: clearRect, fillRect, save/restore,
-// translate/rotate, beginPath, moveTo, lineTo, closePath, arc, ellipse,
-// fill, stroke.
+// translate/rotate, beginPath, moveTo, lineTo, quadraticCurveTo, closePath,
+// arc, ellipse, fill, stroke.
 
 export function makeSpriteCanvas(document, w, h) {
   if (document) {
@@ -49,6 +49,7 @@ export class CanvasProxy {
   beginPath() { this.ctx.beginPath(); }
   moveTo(a, b) { this.ctx.moveTo(a, b); }
   lineTo(a, b) { this.ctx.lineTo(a, b); }
+  quadraticCurveTo(cx, cy, x, y) { this.ctx.quadraticCurveTo(cx, cy, x, y); }
   closePath() { this.ctx.closePath(); }
   // The real Canvas2D API throws IndexSizeError on negative radii; the node
   // StubCtx does not. Clamp so a painter bug can't take down the browser.
@@ -130,6 +131,13 @@ export class StubCtx {
   beginPath() { this.path = []; }
   moveTo(x, y) { this.path.push([x, y]); }
   lineTo(x, y) { this.path.push([x, y]); }
+  quadraticCurveTo(cx, cy, x, y) { // sample the Bezier into the polyline
+    const p0 = this.path.length ? this.path[this.path.length - 1] : [0, 0];
+    for (let i = 1; i <= 12; i++) {
+      const t = i / 12, u = 1 - t;
+      this.path.push([u * u * p0[0] + 2 * u * t * cx + t * t * x, u * u * p0[1] + 2 * u * t * cy + t * t * y]);
+    }
+  }
   closePath() { }
   arc(x, y, r, a0, a1) {
     for (let a = a0; a <= a1 + 0.01; a += 0.4) this.path.push([x + Math.cos(a) * r, y + Math.sin(a) * r]);

@@ -84,7 +84,7 @@ ws.onmessage = (ev) => {
     // Chrome's own background jobs (favicon/updater probes) can 404 without any
     // page request; those are environment noise. A broken game module still
     // fails the sweep via the `?debug handle missing` check below.
-    if (/404/.test(e.text) && !u.includes('127.0.0.1:8000')) {
+    if (/404/.test(e.text) && (!u || u.includes('/favicon.ico') || !/\.(js|html|json)(\?|$)/i.test(u))) {
       process.stderr.write('[log.skip] ' + (u || '(no url)') + ' :: ' + e.text + '\n');
       return;
     }
