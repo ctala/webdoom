@@ -21,6 +21,8 @@ import { makeFlatBg } from '../gfx/assets.js';
 import { castRay } from '../engine/raycaster.js';
 import { makeItems, setupItems, updateItems, renderItems } from './items.js';
 import { initDoors, updateDoors, useAction, updateIntermission } from './interact.js';
+import { renderHud, renderMenu, renderReticle } from '../gfx/hud.js';
+import { renderAutomap } from './automap.js';
 import { E1M1 } from '../../levels/e1m1.js';
 import { E2M1 } from '../../levels/e2m1.js';
 
@@ -67,8 +69,10 @@ export class Game {
     this.levels = [E1M1, E2M1];
     this.message = { text: '', t: 0 };
     this.stats = { kills: 0, totalKills: 0, secrets: 0, totalSecrets: 0, time: 0, levelTime: 0 };
-    this.input = { up: false, down: false, left: false, right: false, run: false, fire: false, use: false };
+    this.input = { up: false, down: false, left: false, right: false, run: false, fire: false, use: false, map: false };
+    this.frame = 0;
     this.loadLevel(0);
+    this.state = 'MENU'; // title screen; ENTER starts (main.js)
   }
 
   loadLevel(idx, carryKeys = false) {
@@ -109,7 +113,8 @@ export class Game {
     this.state = 'PLAY';
     this.paused = false;
     this.rebuildView();
-    this.setMessage(def.name);
+    if (def.objective) { this.setMessage(def.name + ' - ' + def.objective); this.message.t = 6; }
+    else this.setMessage(def.name);
   }
 
   /** Restart the current level (after death). Full intermission comes in stage 6. */
@@ -299,6 +304,7 @@ export class Game {
   }
 
   render(ctx) {
+    this.frame++;
     const p = this.player;
     this.renderer.flash = p.flash;
     this.renderer.render(
@@ -309,7 +315,10 @@ export class Game {
     this.renderSprites();
     renderParticles(this);
     this.renderViewmodel();
-    this.renderReticle();
+    renderReticle(this);
+    if (this.state === 'PLAY') renderHud(this);
+    if (this.state === 'PLAY' && this.input.map) renderAutomap(this);
+    if (this.state === 'MENU') renderMenu(this);
     if (ctx && this.imageData) ctx.putImageData(this.imageData, 0, 0);
   }
 
@@ -334,6 +343,12 @@ export class Game {
       sr.add(e.x, e.y, def.viewH, sp[set][f], sp.w, sp.h, def.lift || 0, lightLevel(d, 0, false));
     }
     renderItems(this, sr, p, cosA, sinA);
+    const ex = this.map.exit; // exit switch: lit green marker so it reads across the room
+    if (ex) {
+      const exs = this.itemSprites.exit;
+      const d = camDepth(p.x, p.y, cosA, sinA, ex.x, ex.y);
+      if (d >= 0.25) sr.add(ex.x, ex.y, 0.8, exs.tab, exs.w, exs.h, 0, lightLevel(d, 0, false));
+    }
     // projectiles: bright orbs (no dimming — they emit light)
     this.projectiles.each((pr) => {
       if (!pr.active) return;
@@ -343,21 +358,6 @@ export class Game {
       sr.add(pr.x, pr.y, 0.28, g2.tab, g2.w, g2.h, 0.25, 31);
     });
     sr.render(this.renderer.buf, this.renderer.depth, this.W, this.H);
-  }
-
-  /** Firing reticle: the exact spot the center of the screen (and the
-   *  center pellet/bolt) hits. Full HUD/crosshair options arrive in stage 6. */
-  renderReticle() {
-    if (this.state !== 'PLAY') return;
-    const { W, H } = this;
-    const buf = this.renderer.buf;
-    const cx = W >> 1, cy = H >> 1;
-    // 0xAABBGGRR: bright green (R 0x50, G 0xff, B 0x20)
-    const c = (0xff << 24) | (0x20 << 16) | (0xff << 8) | 0x50;
-    for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [3, 0], [-3, 0], [0, 1], [0, -1], [0, 3], [0, -3]]) {
-      const x = cx + dx, y = cy + dy;
-      if (x >= 0 && x < W && y >= 0 && y < H) buf[y * W + x] = c;
-    }
   }
 
   /** First-person weapon viewmodel, bottom-center with walk bob. */

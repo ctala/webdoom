@@ -87,6 +87,7 @@ test('death -> respawn() restarts the level clean (no stuck state)', () => {
 
 test('E1M1: walking the corridor sees D/R doors and never throws', () => {
   const g = new Game(makeTables(null), 480, 270, new Uint32Array(480 * 270));
+  g.loadLevel(0); // past the title screen (ENTER in the browser)
   // aim through the corridor gap (5..6,14) and walk north into the door row
   g.player.ang = Math.atan2(14.5 - g.player.y, 5.9 - g.player.x);
   g.input.up = true;

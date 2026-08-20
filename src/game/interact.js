@@ -31,19 +31,17 @@ export function updateIntermission(game, dt) {
 }
 
 /**
- * Consume one "use" action (E/U). Checks the cell ~1.3u ahead and the
- * exit switch cell; doors need their key (R/B), plain D and secret S don't.
+ * What is in front of the player right now? Shared by useAction (E/U) and
+ * the HUD proximity hint so they can never disagree.
+ * @returns {{kind:string, cell:number, t:number} | null}
+ *   kind: 'exit' | 'door-plain' | 'door-secret' | 'door-R' | 'door-B'
  */
-export function useAction(game) {
+export function scanUse(game) {
   const p = game.player;
   const { gw, gh, exit } = game.map;
-  // exit: standing near the switch and press use (Doom-style wall switch)
   if (exit) {
     const dx = p.x - exit.x, dy = p.y - exit.y;
-    if (dx * dx + dy * dy < 1.3 * 1.3) {
-      levelComplete(game);
-      return;
-    }
+    if (dx * dx + dy * dy < 1.3 * 1.3) return { kind: 'exit', cell: -1, t: 0 };
   }
   const cells = game.useScratch || (game.useScratch = []);
   cells.length = 0;
@@ -59,24 +57,38 @@ export function useAction(game) {
   for (const c of cells) {
     const t = game.map.doorType[c];
     if (!t) continue;
-    if ((t === 2 && !p.keyR) || (t === 3 && !p.keyB)) {
-      game.setMessage(t === 2 ? 'NEED THE RED KEYCARD' : 'NEED THE BLUE KEYCARD');
-      game.sfx('denied');
-      return;
-    }
-    if (game.doorH[c] < 1) {
-      game.doorH[c] = 0.02; // start the open animation
-      game.sfx('door');
-      if (t === 4 && !game.secretCounted) {
-        game.secretCounted = true;
-        game.stats.secrets++;
-        game.setMessage('SECRET FOUND');
-      }
-    }
-    return; // one door per use press
+    return { kind: t === 1 ? 'door-plain' : t === 2 ? 'door-R' : t === 3 ? 'door-B' : 'door-secret', cell: c, t };
   }
-  // nothing interactive ahead: brief feedback so E never feels dead
-  game.sfx('denied');
+  return null;
+}
+
+/** Consume one "use" action (E/U): doors need their key, the exit completes. */
+export function useAction(game) {
+  const p = game.player;
+  const hit = scanUse(game);
+  if (!hit) {
+    // nothing interactive ahead: brief feedback so E never feels dead
+    game.sfx('denied');
+    return;
+  }
+  if (hit.kind === 'exit') {
+    levelComplete(game);
+    return;
+  }
+  if ((hit.t === 2 && !p.keyR) || (hit.t === 3 && !p.keyB)) {
+    game.setMessage(hit.t === 2 ? 'NEED THE RED KEYCARD' : 'NEED THE BLUE KEYCARD');
+    game.sfx('denied');
+    return;
+  }
+  if (game.doorH[hit.cell] < 1) {
+    game.doorH[hit.cell] = 0.02; // start the open animation
+    game.sfx('door');
+    if (hit.t === 4 && !game.secretCounted) {
+      game.secretCounted = true;
+      game.stats.secrets++;
+      game.setMessage('SECRET FOUND');
+    }
+  }
 }
 
 /** Exit switch used: intermission to the next level, or WON on the last one. */

@@ -13,15 +13,26 @@ function makeGame() {
   return { g, buf };
 }
 
-test('game constructs and loads E1M1', () => {
+test('game constructs on the title screen and loads E1M1', () => {
   const { g } = makeGame();
+  assert.equal(g.state, 'MENU', 'starts on the title screen');
+  g.loadLevel(0); // what ENTER does in main.js
   assert.equal(g.state, 'PLAY');
   assert.equal(g.map.gw, 32);
   assert.ok(g.player.hp === 100);
 });
 
+test('tick is a no-op in MENU (nothing moves before start)', () => {
+  const { g } = makeGame();
+  g.input.up = true;
+  for (let i = 0; i < 60; i++) g.tick(1 / 60);
+  assert.equal(g.player.x, g.map.player.x, 'player frozen on the menu');
+  assert.equal(g.state, 'MENU');
+});
+
 test('player moves forward, blocks at the first wall, no NaNs', () => {
   const { g, buf } = makeGame();
+  g.loadLevel(0);
   const x0 = g.player.x;
   g.input.up = true;
   for (let i = 0; i < 120; i++) g.tick(1 / 60);
@@ -42,6 +53,7 @@ test('player moves forward, blocks at the first wall, no NaNs', () => {
 
 test('turning changes the rendered view (different walls visible)', () => {
   const a = makeGame();
+  a.g.loadLevel(0);
   for (let i = 0; i < 30; i++) a.g.tick(1 / 60);
   a.g.render(null);
   const band = 100 * 480;
@@ -58,6 +70,7 @@ test('turning changes the rendered view (different walls visible)', () => {
 
 test('tick is a no-op when paused (state frozen)', () => {
   const { g } = makeGame();
+  g.loadLevel(0);
   g.input.up = true;
   g.tick(1 / 60);
   const x1 = g.player.x;

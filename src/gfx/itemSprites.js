@@ -59,6 +59,13 @@ function paintKey(c, body, dark) {
   c.fillStyle = dark; c.fillRect(10, 20, 7, 2); // stripe
 }
 
+function paintExit(c) {
+  c.fillStyle = '#101810'; c.beginPath(); c.ellipse(16, 18, 9, 10, 0, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#38ff50'; c.beginPath(); c.ellipse(16, 17, 7.5, 8.5, 0, 0, Math.PI * 2); c.fill(); // green ring
+  c.fillStyle = '#0c1c0e'; c.beginPath(); c.ellipse(16, 17, 4.5, 5.5, 0, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#7cff88'; c.fillRect(14.8, 12.5, 2.4, 9); c.fillRect(12.5, 15.8, 7, 2.4); // cross = goal
+}
+
 const PAINT = {
   health: paintHealth,
   armor: paintArmor,
@@ -67,6 +74,7 @@ const PAINT = {
   ammoPl: paintAmmoPl,
   keyR: (c) => paintKey(c, '#c84030', '#7a2018'),
   keyB: (c) => paintKey(c, '#3860c8', '#1c3a7a'),
+  exit: paintExit,
 };
 
 /**

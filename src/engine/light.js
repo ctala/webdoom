@@ -25,6 +25,12 @@ export function lightLevel(d, flash = 0, sideDim = false) {
   return l;
 }
 
+/** Closed doors are lit a bit brighter than the walls around them (clamped). */
+export function doorLight(l) {
+  const v = l + 8;
+  return v > SHADES - 1 ? SHADES - 1 : v;
+}
+
 /** Damage falloff over distance (1 at 0, 0.3 at maxRange). */
 export function damageFalloff(dist, maxRange) {
   if (dist <= 0.4) return 1;

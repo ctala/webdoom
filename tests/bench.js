@@ -45,4 +45,8 @@ bench('stage5 E2M1: enemies+items+doors+shotgun viewmodel', real, (g) => {
   g.input.up = true; g.input.fire = true; g.player.hp = 1e5; g.player.weapon = 3;
   for (let i = 0; i < g.doorCells.length; i++) g.doorH[g.doorCells[i]] = 0.02 + (i % 5) * 0.18;
 });
+bench('stage6 E1M1 full: HUD + automap open + combat', real, (g) => {
+  g.loadLevel(0);
+  g.input.up = true; g.input.fire = true; g.player.hp = 1e5; g.input.map = true;
+});
 console.log('\nnote: CPU-only V8 timings; browser adds ~<0.5ms GPU blit for 480x270.');

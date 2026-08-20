@@ -240,3 +240,51 @@ tiempo real — medkit (hp 60→85), keycard rojo abierto la puerta R, exit →
 INTERM → E2M1 por el rAF real, keycard azul real abierta la puerta B
 (denied antes), 14 ítems, 0 errores de consola. Frame QA
 `_qa/m_e2m1.png` + contact sheet 8 tiles.
+
+## Stage 6 — HUD en buffer, menú, automapa y notoriedad (final)
+- **Menú de título** (estado `MENU` inicial): pantalla WEBDOOM + controles
+  sobre la escena; ENTER (tecla REAL) arranca en main.js. `tick` es no-op
+  en MENU; tests de congelación.
+- **HUD en buffer** (`src/gfx/hud.js` + `src/gfx/font5x7.js`, fuente 5x7
+  bitmap procedural): franja inferior 26 px — cara del marine 8x8 por
+  escala (daño 0..4, ojos siguen la dirección del golpe), HP verde,
+  nombre de arma + munición amarilla, armadura, slots de keycard
+  (rojo/azul encienden al llevarlos). Renderiza directo al buffer:
+  testeable sin navegador.
+- **Pista contextual de uso** (lo que faltaba para no quedarse perdido):
+  `interact.js` ahora expone `scanUse()` ("¿qué hay enfrente?") compartida
+  por `useAction` y el HUD — nunca pueden desacordarse. Frente a un target:
+  "PRESS E / U - DOOR", "PRESS E / U - EXIT", o "RED/BLUE KEYCARD NEEDED"
+  (cian, 12 px sobre la franja; el mensaje transitorio ámbar lo sustituye).
+- **Automapa con TAB** (`src/game/automap.js`): panel opaco centrado
+  192x144 (6 px/celda, 32x24 → exacto): solo celdas exploradas (muro
+  ladrillo / suelo), puertas amarillas, secreto marrón, salida verde,
+  enemigos en vivo, jugador con tick de rumbo. `input.map` (TAB
+  mantener) lo habilita; test pixel a pixel + gate por flag.
+- **Notoriedad de puertas y salida** (feedback de jugada real):
+  - `doorLight(): puertas cerradas +8 niveles de luz (d<6u) para
+    destacar de la pared (test del clamp).
+  - Switch de **salida con marcador verde con cruz** (sprite billboard
+    `itemSprites.exit`, 0.8u) visible a distancia — antes era una celda de
+    suelo invisible. Smoke test de render.
+  - **Objetivo por nivel** al cargar (6 s): "E1M1 HANGAR - FIND THE RED
+    KEYCARD, THEN THE EXIT" (E2M1 lo suyo); mensajes largos caen a escala
+    1 automáticamente (no desbordan los 480 px).
+- **QA de proceso completo** (`scripts/qa-playthrough.mjs`, el que pedía el
+  usuario): bot en la página REAL con eventos de teclado verdaderos
+  (W/E/ENTER), pathfinding con el AStar del juego sobre la grid
+  passable-por-puertas; secuencia completa MENÚ → E1M1 (llave roja, 2
+  puertas, salida, INTERM) → E2M1 (llave azul, puerta B, salida) → **WON**
+  en ~90 s, 0 errores de página. Invulnerable a propósito (QA de
+  navegación/interacción; combate cubierto por tests + sweep).
+
+Tests: 131 pasando (+15: fuente/HUD cara/HP/llave/hints/menú/automapa +
+marcador de salida + objetivo). Bench stage6 (E1M1 lleno + HUD + automapa
+abierto + disparando): **0.685 ms/frame** (budget 16.66). QA navegador:
+sweep CLEAN + playthrough PASS (WON). Frames `_qa/n..r` (menú, objetivo,
+pista de puerta, automapa, salida).
+
+### Backlog (nuevo)
+- **Boss final**: el usuario esperaba un jefe; el caco de la sala de
+  salida de E2M1 es lo más cercano. Candidato: E3M1 con un caco
+  reforzado/jefe propio antes de la victoria.

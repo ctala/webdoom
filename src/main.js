@@ -63,6 +63,7 @@ window.addEventListener('keydown', (e) => {
   const k = KEYMAP[e.code];
   if (k) { input[k] = true; e.preventDefault(); }
   if (e.code === 'KeyE' || e.code === 'KeyU') input.use = true; // E or U, Doom-style
+  if (e.code === 'Tab') { input.map = true; e.preventDefault(); } // automap while held
 });
 window.addEventListener('pointerdown', unlockAudio);
 window.addEventListener('wheel', (e) => {
@@ -74,6 +75,7 @@ window.addEventListener('keyup', (e) => {
   const k = KEYMAP[e.code];
   if (k) input[k] = false;
   if (e.code === 'KeyE') input.use = false;
+  if (e.code === 'Tab') input.map = false;
   // KeyU stays true while held: useAction consumes it (edge handled in tick)
 });
 
@@ -133,7 +135,8 @@ window.addEventListener('blur', () => {
 const msg = document.getElementById('msg');
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Enter' || e.code === 'NumpadEnter') {
-    if (game.state === 'DEAD') game.respawn();
+    if (game.state === 'MENU') { unlockAudio(); tryLock(); game.loadLevel(0); }
+    else if (game.state === 'DEAD') game.respawn();
     else if (game.state === 'WON') game.loadLevel(0);
     else if (game.state === 'INTERM') game.intermT = 0; // skip the intermission
   }

@@ -14,7 +14,7 @@
 // floor/ceiling because walls are painted afterwards.
 
 import { castRay } from './raycaster.js';
-import { lightLevel } from './light.js';
+import { lightLevel, doorLight } from './light.js';
 
 export class Renderer {
   /**
@@ -82,7 +82,8 @@ export class Renderer {
       const step = 64 / lineH; // texels per screen row
       const u = Math.min(63, (ray.texX * 64) | 0); // texture COLUMN for this slice
       const ut = ray.texX * 64; // continuous u (decal hit tests)
-      const b = lightLevel(d, flash, ray.side === 1);
+      let b = lightLevel(d, flash, ray.side === 1);
+      if (id >= 8 && d < 6) b = doorLight(b); // closed doors read brighter than the walls around them
       const sideLvl = ray.side === 1 ? 32 : 0;
       const y0 = yTop < 0 ? 0 : yTop | 0;
       const y1 = yBot >= H ? H : (yBot | 0) + 1;
