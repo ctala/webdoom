@@ -36,8 +36,8 @@ Procedencia: la BASE (v1.0.0, motor + 3 niveles + QA, 45.8h) la construyó
       (fogonazo/plasma/explosión) en el renderer; gibs al morir
 - [x] **4. Cohete + ametralladora** → v1.5.0: ✅ proyectil con splash (daña al
       jugador cerca), chaingun con spread creciente; sprites + sonidos
-- [ ] **5. Enemigos nuevos** → v1.6.0: Lost Soul (melee veloz), Baron (duro,
-      doble bolt), Pain Elemental (spawn imps, respeta ENEMY_MAX=48)
+- [x] **5. Enemigos nuevos** → v1.6.0: ✅ Lost Soul (melee veloz), Baron (duro,
+      doble bolt), Pain Elemental (spawn imps, respeta ENEMY_MAX=48). Colocados en E2M1/E3M1.
 - [ ] **6. Items + E4M1/E5M1** → v1.7.0: berserk, megasphere, invisibilidad,
       traje radiación + suelo de peligro; E4 hub multi-llave; E5 usa
       `heights` 2/3 + jefe final 2 fases

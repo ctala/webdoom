@@ -21,6 +21,11 @@ export const ENEMY_DEF = {
   // (faster attack, +50% bolt damage). press: closes to 5u instead of kiting
   // at its max range — kills the "snipe it safely from 11u" strat.
   boss:      { hp: 550, speed: 1.4, range: 8.0, kind: 'ranged', pKind: 'bolt', dmg: 24, cd: 1.7, r: 0.45, viewH: 1.4, lift: 0.5, spread: 3, press: 5.0 },
+  // stage 5 additions: fast burning skull, armored twin-bolt heavyweight,
+  // and a fat breeder that spits imps while it wades in.
+  lostsoul:  { hp: 45, speed: 4.2, range: 1.25, kind: 'melee', dmg: 16, cd: 0.7, r: 0.24, viewH: 0.7, lift: 0.3 },
+  baron:     { hp: 180, speed: 1.9, range: 9.5, kind: 'ranged', pKind: 'bolt', dmg: 20, cd: 1.5, r: 0.4, viewH: 1.2, spread: 2 },
+  pain:      { hp: 250, speed: 1.7, range: 1.4, kind: 'melee', dmg: 22, cd: 1.0, r: 0.42, viewH: 1.15, spawn: { type: 'imp', cd: 5.0 } },
 };
 const SIGHT = 13.5;
 
@@ -29,24 +34,28 @@ export function isEnraged(e) {
   return e.type === 'boss' && e.hp > 0 && e.hp < e.maxHp * 0.45;
 }
 
+export function spawnEnemy(game, type, x, y) {
+  const def = ENEMY_DEF[type];
+  if (!def || game.enemyCount >= ENEMY_MAX) return false;
+  const s = game.enemies[game.enemyCount++];
+  s.type = type; s.x = x; s.y = y;
+  s.hp = def.hp; s.maxHp = def.hp;
+  s.state = ST.SLEEP; s.tState = ((x * 7 + y * 13) % 5) * 0.1;
+  s.cd = 0.4; s.justHurt = false; s.heard = false;
+  s.hasPath = false; s.pathI = 0; s.pathT = 0; s.stuck = 0;
+  s.anim = 'idle'; s.animF = 0; s.animT = 0;
+  s.deadT = 0; s.swing = 0; s.swingDone = false;
+  s.spawnT = 0;
+  s.enraged = false; // slot reuse: never carry the enrage flag across levels/respawns
+  s.path = (s.path && s.path.length >= 128) ? s.path : new Int16Array(128);
+  game.stats.totalKills++; // it can be killed, it counts
+  return true;
+}
+
 export function setupEnemies(game) {
   game.enemyCount = 0;
   const { gw, solid } = game.map;
-  const spawn = (type, x, y) => {
-    const def = ENEMY_DEF[type];
-    if (!def || game.enemyCount >= ENEMY_MAX) return false;
-    const s = game.enemies[game.enemyCount++];
-    s.type = type; s.x = x; s.y = y;
-    s.hp = def.hp; s.maxHp = def.hp;
-    s.state = ST.SLEEP; s.tState = ((x * 7 + y * 13) % 5) * 0.1;
-    s.cd = 0.4; s.justHurt = false; s.heard = false;
-    s.hasPath = false; s.pathI = 0; s.pathT = 0; s.stuck = 0;
-    s.anim = 'idle'; s.animF = 0; s.animT = 0;
-    s.deadT = 0; s.swing = 0; s.swingDone = false;
-    s.enraged = false; // slot reuse: never carry the enrage flag across levels/respawns
-    s.path = (s.path && s.path.length >= 128) ? s.path : new Int16Array(128);
-    return true;
-  };
+  const spawn = (type, x, y) => spawnEnemy(game, type, x, y);
   // mobMul: ITYTD drops every third spawn (boss exempt); UV/Nightmare add a
   // twin beside originals that have open ground. The boss is sacred.
   const ratio = diffOf(game).mobMul;
@@ -92,7 +101,6 @@ export function setupEnemies(game) {
       }
     }
   }
-  game.stats.totalKills += game.enemyCount;
 }
 
 function stepEnemy(e, def, nx, ny, dist, dt, view, map) {
@@ -234,6 +242,23 @@ export function updateEnemies(game, dt) {
       }
       case ST.ATTACK: {
         e.animT += dt;
+        if (def.spawn) {
+          e.spawnT += dt;
+          if (e.spawnT >= def.spawn.cd) {
+            e.spawnT = 0;
+            if (game.enemyCount < ENEMY_MAX - 2) {
+              for (const [ox, oy] of [[0.7, 0], [-0.7, 0], [0, 0.7], [0, -0.7]]) {
+                const nx = e.x + ox, ny = e.y + oy;
+                if (view[Math.floor(ny) * gw + Math.floor(nx)]) continue;
+                if (spawnEnemy(game, def.spawn.type, nx, ny)) {
+                  game.sfx('spawn', nx, ny);
+                  game.emitSound(nx, ny, 5);
+                }
+                break;
+              }
+            }
+          }
+        }
         if (def.kind === 'ranged') {
             if (def.press && dist > def.press && sees) {
               stepEnemy(e, def, dx, dy, dist, dt * (isEnraged(e) ? 1.3 : 1), view, game.map);

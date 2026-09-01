@@ -253,6 +253,9 @@ function paintCorpse(c, t) {
     commander: ['#414c58', '#3a0d0a', 4],
     caco: ['#4a2a63', '#4e1410', 5],
     boss: ['#92281e', '#5e1410', 8],
+    lostsoul: ['#e8dcc8', '#8a5a2a', 11],
+    baron: ['#6f9558', '#3f5a2c', 12],
+    pain: ['#5c4030', '#3a1a14', 13],
   };
   const [body, blood, seed] = map[t];
   const h1 = (i) => ((i * 9301 + seed * 49297) % 233280) / 233280;
@@ -265,7 +268,63 @@ function paintCorpse(c, t) {
   }
 }
 
-const PAINT = { imp: paintImp, demon: paintDemon, commander: paintCommander, caco: paintCaco, boss: paintBoss };
+function paintLostSoul(c, set, f) {
+  // burning skull, hovering: flames flicker per frame
+  const cy = 15 + (set === 'idle' ? [0, 1][f & 1] : 0);
+  if (set !== 'corpse') {
+    for (let k = 0; k < 6; k++) { // flame plume
+      const a = (k / 6) * 2 - 1;
+      const fl = ((k * 7 + f * 5) % 4) + 2;
+      dot(c, 16 + a * 5, cy - 8 - fl * 0.6, 1.4 + f * 0.12, k % 2 ? '#ff8a2a' : '#ffc23a');
+    }
+    if (set === 'pain') blob(c, 16, cy, 4.4, 3.4, '#6a3a1a'); else blob(c, 16, cy, 5, 4, '#e8dcc8'); // bone head
+    dot(c, 13.8, cy - 0.6, 1.5, '#ff5020'); // eye sockets burn
+    dot(c, 18.2, cy - 0.6, 1.5, '#ff5020');
+    c.fillStyle = '#7a3010';
+    c.fillRect(13, cy + 2.6, 6, 1.4); // jaw
+    if (set === 'atk' && f >= 2) dot(c, 16, cy + 4, 1.6 + f * 0.5, '#ffe060'); // shriek flare
+  } else { blob(c, 16, 26, 5, 2, '#8a5a2a'); }
+}
+
+function paintBaron(c, set, f) {
+  // tall pale-green armored heavyweight with two horns
+  const lean = set === 'walk' ? [[-0.5, 0.5], [0.5, -0.5]][0][f & 1] || 0 : 0;
+  const cy = set === 'death' ? 14 + (f / 3) * 8 : 12;
+  const rx = set === 'death' ? 8 * (1 - f / 5) : 7;
+  if (set !== 'corpse') {
+    spike(c, 12.5 + lean, cy - 6, -0.5, 5, 2.4, '#d8cfae'); // horns
+    spike(c, 19.5 + lean, cy - 6, 0.5, 5, 2.4, '#d8cfae');
+    blob(c, 16 + lean, cy + 4, rx, set === 'pain' ? 5.4 : 6.4, set === 'pain' ? '#8aa06a' : '#6f9558'); // torso
+    for (const [px, py] of [[13, 14], [18, 16], [15, 19]]) dot(c, px + lean, py + cy - 12, 1.6, '#3f5a2c'); // armor spots
+    blob(c, 12 + lean, cy + 9, 2.2, 3.4, '#b8b096'); // stubby legs
+    blob(c, 20 + lean, cy + 9, 2.2, 3.4, '#b8b096');
+    blob(c, 16 + lean, cy - 3, 4.2, 3.6, '#c8b48a'); // pale head
+    dot(c, 14.4 + lean, cy - 3.4, 1.2, '#ffd030');
+    dot(c, 17.6 + lean, cy - 3.4, 1.2, '#ffd030');
+    if (set === 'atk' && f >= 1) {
+      dot(c, 13 + lean, cy + 1, 1.8 + f * 0.4, '#b060ff'); // twin bolt charge hands
+      dot(c, 19 + lean, cy + 1, 1.8 + f * 0.4, '#b060ff');
+    }
+  }
+}
+
+function paintPain(c, set, f) {
+  // fat brown breeder with three probing orifices; mouth blooms when spawning
+  const cy = set === 'idle' ? 14 + [0, 1][f & 1] : 14;
+  if (set !== 'corpse') {
+    blob(c, 16, cy + 6, 9.5, 4, '#3a2a20'); // shadowed base
+    blob(c, 16, cy, set === 'pain' ? 8 : 9, set === 'pain' ? 7 : 8, set === 'pain' ? '#6a4236' : '#5c4030');
+    dot(c, 11, cy - 4, 1.7, '#e05060'); // small mean eyes
+    dot(c, 21, cy - 4, 1.7, '#e05060');
+    for (const [ox, oy] of [[-6, 2], [6, 2], [0, 5]]) { // pink proboscides
+      blob(c, 16 + ox, cy + oy, 2.4, 1.8, '#c87a8a');
+      dot(c, 16 + ox * 1.25, cy + oy, 1, '#8a3a4a');
+    }
+    if (set === 'atk') dot(c, 16, cy + 5, 2 + f, f >= 3 ? '#ffb0a0' : '#a86070'); // spawn bloom
+  } else { blob(c, 16, 25, 8, 3, '#3a1a14'); }
+}
+
+const PAINT = { imp: paintImp, demon: paintDemon, commander: paintCommander, caco: paintCaco, boss: paintBoss, lostsoul: paintLostSoul, baron: paintBaron, pain: paintPain };
 const SETS = { idle: 1, walk: 4, atk: 4, pain: 2, death: 4, corpse: 1 };
 
 /** Small 8x8 glowing orbs for projectiles (fireball / caco bolt). */

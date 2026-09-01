@@ -86,8 +86,10 @@ test('mobMul scales enemy count; boss never added or removed', () => {
     assert.equal(boss, 1, DIFFS[d].name + ': exactly one Warden');
     counts.push(g.enemyCount);
   }
-  // E3M1 map has 4 spawns: ITYTD drops every third non-boss, Nightmare scatters more
-  assert.equal(counts[1], 4, 'HMP = map count');
+  // E3M1 map spawns: ITYTD drops every third non-boss, Nightmare scatters more
+  const mapCount = g2 => g2.map.ents.filter((e) => ENEMY_DEF[e.type]).length;
+  const gm = makeGame(); gm.loadLevel(2);
+  assert.equal(counts[1], mapCount(gm), 'HMP = map count');
   assert.ok(counts[0] < counts[1], `ITYTD thinner (${counts[0]})`);
   assert.ok(counts[2] > counts[1] && counts[3] > counts[2], `more mobs when harder (${counts})`);
   assert.ok(scattered >= 3, `harder diffs scattered extras (${scattered})`);

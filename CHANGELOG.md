@@ -483,3 +483,23 @@ sentía, recibir no se veía, y todo sonaba en el centro de la cabeza.
 - Tests: **166** (+5 guns: burst/ramp, splash+self-damage, kill por splash,
   fallback Doom, defs 6 armas; test mobMul ahora exige dispersión real).
   Bench peor 3,1 ms/frame. Sweep CLEAN, playthrough PASS (WON).
+
+## v1.6.0 — [flash] Etapa F5: Lost Soul, Baron y Pain Elemental
+- **LOST SOUL** (`L`): cráneo ardiente, HP 45 pero **speed 4.2** (el más
+  rápido del juego), melee 16/0.7s y levita (lift 0.3). Aparece de la nada
+  si te descuidas: castiga ir mirando al mapa. En E2M1, corredor medio.
+- **BARON** (`N`): tanque verde de 180 hp, ráfaga de **2 bolts** (spread),
+  rango 9.5. Guarda la esquina SE del foso de E3M1 (no corta la ruta del
+  bot; es el premio del que explora).
+- **PAIN ELEMENTAL** (`Q`): 250 hp, melee 22 y **paritorio**: cada 5 s
+  escupe un imp al hueco libre más cercano (sfx `spawn`), respetando
+  `ENEMY_MAX-2` de reserva. En la sala tras la puerta B de E2M1.
+- `spawnEnemy` exportado (setup, spawner y tests usan el mismo camino);
+  los imps paridos suman a `stats.totalKills` y resetean `spawnT/enraged`
+  en el reuso de slot.
+- Sprites procedurales nuevos: llama que parpadea por frame (Lost Soul),
+  cuernos + carga doble en las manos (Baron), trompas rosadas y boca de
+  parto (Pain Elemental) + sus cadáveres.
+- Tests: **171** (+5: sets de sprite, sprint+melee, doble bolt, parto con
+  cap, ceiling del pool). Sweep CLEAN, playthrough PASS (el bot ni pisa la
+  esquina del Baron y sobrevive al paritorio de E2M1).

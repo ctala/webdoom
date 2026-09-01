@@ -88,6 +88,7 @@ export const SFX_BANK = {
   plasma: (t0, out) => { tone('sawtooth', 980, 240, t0, 0.16, 0.22, out); tone('sine', 1400, 500, t0, 0.09, 0.12, out); },
   chaingun: (t0, out) => { noise(0.05, 0.45, 2200, t0, 1, out); tone('square', 200, 60, t0, 0.05, 0.2, out); },
   rocket: (t0, out) => { noise(0.35, 0.5, 900, t0, 1, out); tone('sawtooth', 220, 80, t0, 0.35, 0.3, out); },
+  spawn: (t0, out) => { noise(0.18, 0.4, 700, t0, 1, out); tone('sine', 180, 90, t0, 0.18, 0.25, out); },
   boom: (t0, out) => { noise(0.6, 0.8, 500, t0, 1, out); tone('sawtooth', 120, 30, t0, 0.55, 0.5, out); tone('square', 60, 25, t0 + 0.03, 0.3, 0.4, out); },
   punch: (t0, out) => { noise(0.07, 0.4, 500, t0, 1, out); tone('sine', 90, 45, t0, 0.08, 0.3, out); },
   hit: (t0, out) => { tone('sawtooth', 300, 140, t0, 0.12, 0.2, out); noise(0.06, 0.3, 900, t0, 1, out); },
