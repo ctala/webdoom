@@ -26,12 +26,15 @@ export const ENEMY_DEF = {
   lostsoul:  { hp: 45, speed: 4.2, range: 1.25, kind: 'melee', dmg: 16, cd: 0.7, r: 0.24, viewH: 0.7, lift: 0.3 },
   baron:     { hp: 180, speed: 1.9, range: 9.5, kind: 'ranged', pKind: 'bolt', dmg: 20, cd: 1.5, r: 0.4, viewH: 1.2, spread: 2 },
   pain:      { hp: 250, speed: 1.7, range: 1.4, kind: 'melee', dmg: 22, cd: 1.0, r: 0.42, viewH: 1.15, spawn: { type: 'imp', cd: 5.0 } },
+  // THE OVERLORD (E5M1): second phase of the Warden's line — 5-bolt spray,
+  // closes to 4.5u, enrages under 45% (that is its "phase 2").
+  overlord:  { hp: 750, speed: 1.5, range: 9.0, kind: 'ranged', pKind: 'bolt', dmg: 26, cd: 1.6, r: 0.5, viewH: 1.6, lift: 0.55, spread: 5, press: 4.5 },
 };
 const SIGHT = 13.5;
 
 /** True while the Warden is below 45% hp (fires faster, hits harder). */
 export function isEnraged(e) {
-  return e.type === 'boss' && e.hp > 0 && e.hp < e.maxHp * 0.45;
+  return (e.type === 'boss' || e.type === 'overlord') && e.hp > 0 && e.hp < e.maxHp * 0.45;
 }
 
 export function spawnEnemy(game, type, x, y) {
@@ -187,12 +190,12 @@ export function updateEnemies(game, dt) {
       if (ns === ST.DEATH) {
         game.stats.kills++;
         game.emitSound(e.x, e.y, 7);
-        const boss = e.type === 'boss';
+        const boss = e.type === 'boss' || e.type === 'overlord';
         game.spawnBlood(e.x, e.y, boss ? 26 : 12, Math.atan2(game.player.y - e.y, game.player.x - e.x), boss ? 6 : 4.5);
         game.sfx('edead', e.x, e.y);
         if (boss) {
           game.sfx('bossdie');
-          game.setMessage('THE WARDEN FALLS - THE EXIT IS OPEN');
+          game.setMessage((e.type === 'overlord' ? 'THE OVERLORD FALLS' : 'THE WARDEN FALLS') + ' - THE EXIT IS OPEN');
         }
       } else if (ns === ST.ALERT) {
         game.emitSound(e.x, e.y, 4);

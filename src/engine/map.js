@@ -29,7 +29,7 @@ const WALLS = new Map([
   ['L', [W_STONE, H_LOW]],
 ]);
 
-const ENT_CODES = { i: 'imp', d: 'demon', c: 'commander', v: 'caco', J: 'boss', h: 'health', g: 'armor', m: 'ammoP', s: 'ammoS', p: 'ammoPl', r: 'ammoR', k: 'keyR', b: 'keyB', l: 'lostsoul', N: 'baron', Q: 'pain', '!': 'berserk', M: 'mega', I: 'invis', U: 'suit' };
+const ENT_CODES = { i: 'imp', d: 'demon', c: 'commander', v: 'caco', J: 'boss', h: 'health', g: 'armor', m: 'ammoP', s: 'ammoS', p: 'ammoPl', r: 'ammoR', k: 'keyR', b: 'keyB', W: 'overlord', l: 'lostsoul', N: 'baron', Q: 'pain', '!': 'berserk', M: 'mega', I: 'invis', U: 'suit' };
 
 export function parseLevel(rows, name = '') {
   const gh = rows.length;

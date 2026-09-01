@@ -186,9 +186,9 @@ window.__bot.exit = async () => {
   return ok ? 'OK exit used, state=' + g.state : 'FAIL exit not triggered';
 };
 window.__bot.killBoss = async () => {
-  const e = g.enemies.find((x) => x.type === 'boss');
+  const e = g.enemies.find((x) => x.type === 'boss' || x.type === 'overlord');
   if (!e) return 'FAIL no boss on map';
-  L('the Warden: hp=' + e.hp + ' at (' + e.x.toFixed(1) + ',' + e.y.toFixed(1) + ')');
+  L(e.type + ': hp=' + e.hp + ' at (' + e.x.toFixed(1) + ',' + e.y.toFixed(1) + ')');
   const p0 = pathTo(Math.floor(e.x), Math.min(21, Math.floor(e.y + 4))); // close from the south
   if (!p0.n) return 'FAIL no path to the boss';
   if (!(await walkTo(p0.cells, 'boss approach'))) return 'FAIL approach the boss';
@@ -208,8 +208,8 @@ window.__bot.killBoss = async () => {
     await sleepMs(70);
   }
   key('Space', false);
-  if (e.state !== 5 && e.state !== 6) return 'FAIL the Warden survived (hp=' + e.hp + ') fire=' + g.input.fire + ' w=' + g.player.weapon;
-  L('the Warden fell in ' + ((Date.now() - t0) / 1000).toFixed(1) + 's; ' + g.message.text);
+  if (e.state !== 5 && e.state !== 6) return 'FAIL the boss survived (hp=' + e.hp + ') fire=' + g.input.fire + ' w=' + g.player.weapon;
+  L('the boss fell in ' + ((Date.now() - t0) / 1000).toFixed(1) + 's; ' + g.message.text);
   return 'OK boss killed';
 };
 1`);
@@ -235,45 +235,36 @@ const fail = (why) => {
   process.exit(1);
 };
 
-// ---- E1M1 ----
-let r = await step('E1M1:start', 'window.__bot.start()');
-shot('e1m1_title');
+// ---- generic run: every level in order, keys -> boss -> exit ----
+let r = await step('start', 'window.__bot.start()');
+shot('title');
 if (!r.startsWith('OK')) fail(r);
-r = await step('E1M1:key', 'window.__bot.seekKey("keyR")');
-shot('e1m1_redkey');
-if (!r.startsWith('OK')) fail(r);
-// the red door may need the real key; pathing handles the D doors in between
-r = await step('E1M1:exit', 'window.__bot.exit()');
-shot('e1m1_exit');
-if (!r.startsWith('OK')) fail(r);
-// wait for the intermission to load E2M1 for real
-await sleep(3000);
-let d = JSON.parse(await diag('interm'));
-if (d.lvl !== 1) fail('intermission did not advance to E2M1: ' + JSON.stringify(d));
-log('interm→E2M1', 'OK');
-shot('e2m1_start');
-
-// ---- E2M1 ----
-r = await step('E2M1:key', 'window.__bot.seekKey("keyB")');
-shot('e2m1_bluekey');
-if (!r.startsWith('OK')) fail(r);
-r = await step('E2M1:exit', 'window.__bot.exit()');
-shot('e2m1_exit');
-if (!r.startsWith('OK')) fail(r);
-// wait for the intermission to load E3M1 for real
-await sleep(3000);
-d = JSON.parse(await diag('interm2'));
-if (d.lvl !== 2) fail('intermission did not advance to E3M1: ' + JSON.stringify(d));
-log('interm→E3M1', 'OK');
-shot('e3m1_start');
-
-// ---- E3M1 (boss arena) ----
-r = await step('E3M1:boss', 'window.__bot.killBoss()');
-shot('e3m1_bossfall');
-if (!r.startsWith('OK')) fail(r);
-r = await step('E3M1:exit', 'window.__bot.exit()');
-shot('e3m1_exit');
-if (!r.startsWith('OK')) fail(r);
+let d = JSON.parse(await diag('lvl0'));
+if (d.lvl !== 0) fail('did not start at E1M1: ' + JSON.stringify(d));
+const nLevels = await ev('window.__wd.levels.length');
+for (let lvl = 0; lvl < nLevels; lvl++) {
+  const def = JSON.parse(await ev(`JSON.stringify({ name: window.__wd.levels[${lvl}].name, keys: window.__wd.levels[${lvl}].keys || (window.__wd.levels[${lvl}].needsKey ? [window.__wd.levels[${lvl}].needsKey] : []), boss: !!window.__wd.levels[${lvl}].boss })`));
+  const tag = def.name.split(' ')[0];
+  for (const k of def.keys) {
+    r = await step(tag + ':key:' + k, `window.__bot.seekKey('${k}')`);
+    if (!r.startsWith('OK')) fail(r);
+  }
+  if (def.boss) {
+    r = await step(tag + ':boss', 'window.__bot.killBoss()');
+    if (!r.startsWith('OK')) fail(r);
+    shot(tag + '_bossfall');
+  }
+  r = await step(tag + ':exit', 'window.__bot.exit()');
+  if (!r.startsWith('OK')) fail(r);
+  shot(tag + '_exit');
+  if (lvl < nLevels - 1) {
+    await sleep(3000);
+    d = JSON.parse(await diag('interm' + lvl));
+    if (d.lvl !== lvl + 1) fail(`intermission after ${tag} did not advance: ` + JSON.stringify(d));
+    log('interm→' + def.name, 'OK');
+    shot(tag.toLowerCase() + '_start');
+  }
+}
 d = JSON.parse(await diag('won'));
 if (d.state !== 'WON') fail('not WON: ' + JSON.stringify(d));
 shot('won');

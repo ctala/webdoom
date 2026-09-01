@@ -521,3 +521,23 @@ sentía, recibir no se veía, y todo sonaba en el centro de la cabeza.
   los códigos de entidad y de muro comparten el espacio de glifos.
 - Tests: **176** (+5 power/hazard). Bench plano (la rama tóxica del
   floorcaster solo corre en niveles con `~`). Sweep CLEAN, playthrough PASS.
+
+## v1.8.0 — [flash] Etapa F6 (2/2): E4M1, E5M1 y THE OVERLORD
+- **E4M1 CROSSROADS**: hub central con 3 salas D al norte (en ellas caen
+  las dos keycards), ala oeste tras la puerta R y ala este tras la B (secreto
+  con la **megasfera**); la salida sur exige **ambas llaves** — primera
+  puerta lógica con AND de llaves (`level.keys`, mensaje "BOTH KEYCARDS
+  NEEDED" y objetivo que persigue la que falte).
+- **E5M1 THE SPILL**: piso tóxico de verdad (el traje del oeste es
+  obligatorio para cruzar el vertido), muros de piedra/metral/alturas
+  (`2`, `3`, nichos), Baron vigilando en el pasillo radiactivo y
+  **THE OVERLORD** (`W`, 750 hp, spray de 5 bolts, `press 4.5`, enfurece a
+  <45 % = fase 2) tras la puerta D norte.
+- Motor de generalización: `bossAlive`/objetivo/mensaje de muerte sirven a
+  ambos jefes; `currentObjective` recorre arrays de llaves; el gate de
+  salida soporta `keys[]`. WON solo al final de E5M1.
+- **Bot genérico**: `qa-playthrough.mjs` ya no hardcodea E1→E3 — recorre
+  `game.levels` (llaves → jefe → salida → intermedio) hasta WON. Con 5
+  niveles: PASS (OVERLORD cae en 22.9 s).
+- El test que asumía "E3M1 es el último" ahora valida la progresión; +1
+  test nuevo del gate de dos llaves. Suite: **177**.

@@ -108,7 +108,7 @@ test('enrage: below 45% hp the flag, message, and bolt damage kick in', () => {
   assert.equal(dmg2, 36, 'enraged bolts +50%');
 });
 
-test('boss death: kill counted, message, exit unsealed -> WON (E3M1 is last)', () => {
+test('boss death: kill counted, message, exit unsealed -> progression (E3 no longer last)', () => {
   const g = makeGame();
   g.loadLevel(2);
   g.state = 'PLAY';
@@ -129,7 +129,22 @@ test('boss death: kill counted, message, exit unsealed -> WON (E3M1 is last)', (
   assert.equal(bossAlive(g), null);
   g.player.hp = 100;
   useAction(g);
-  assert.equal(g.state, 'WON', 'exit now completes the final level');
+  assert.equal(g.state, 'INTERM', 'exit now advances to E4M1 (WON lives at E5M1 now)');
+});
+
+test('E4M1 exit needs BOTH keycards', () => {
+  const g = makeGame();
+  g.loadLevel(3);
+  g.state = 'PLAY';
+  g.player.x = g.map.exit.x; g.player.y = g.map.exit.y + 1; g.player.ang = -Math.PI / 2;
+  useAction(g);
+  assert.equal(g.state, 'PLAY', 'locked without keys');
+  g.player.keyR = true;
+  useAction(g);
+  assert.equal(g.state, 'PLAY', 'one card is not enough');
+  g.player.keyB = true;
+  useAction(g);
+  assert.equal(g.state, 'INTERM', 'both cards open the way out');
 });
 
 test('objective: key -> exit -> (E3M1) boss -> exit, with the right labels', () => {

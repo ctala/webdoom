@@ -39,8 +39,8 @@ Procedencia: la BASE (v1.0.0, motor + 3 niveles + QA, 45.8h) la construyó
 - [x] **5. Enemigos nuevos** → v1.6.0: ✅ Lost Soul (melee veloz), Baron (duro,
       doble bolt), Pain Elemental (spawn imps, respeta ENEMY_MAX=48). Colocados en E2M1/E3M1.
 - [x] **6a. Items + hazards** → v1.7.0: ✅ berserk, megasphere, invisibilidad,
-- [ ] **6b. E4M1/E5M1 + jefe final** → v1.8.0: E4 hub multi-llave; E5 usa
-      `heights` 2/3 + jefe final 2 fases
+- [x] **6b. E4M1/E5M1 + jefe final** → v1.8.0: ✅ E4 hub multi-llave; E5 usa
+      `heights` 2/3 + THE OVERLORD 2 fases. Bot de playthrough generico por niveles.
 - [ ] **7. Meta** → v1.8.0: guardado/continuar (localStorage), stats de nivel
       (kills %/secrets %, `stats` ya existe), sliders FOV/sens/gamma
 - [ ] **8. Pitch (mirar arriba/abajo)** → v2.0.0: renderer + spriteRenderer +

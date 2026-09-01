@@ -18,7 +18,7 @@ export const OBJ_COLORS = {
 export function bossAlive(game) {
   for (let i = 0; i < game.enemyCount; i++) {
     const e = game.enemies[i];
-    if (e.type === 'boss' && e.state !== ST.DEATH && e.state !== ST.CORPSE) return e;
+    if ((e.type === 'boss' || e.type === 'overlord') && e.state !== ST.DEATH && e.state !== ST.CORPSE) return e;
   }
   return null;
 }
@@ -32,8 +32,9 @@ export function bossAlive(game) {
 export function currentObjective(game) {
   const p = game.player;
   const lvl = game.levels[game.levelIdx];
-  const k = lvl.needsKey;
-  if (k && !p[k]) {
+  const ks = lvl.keys || (lvl.needsKey ? [lvl.needsKey] : []);
+  for (const k of ks) {
+    if (p[k]) continue;
     for (let i = 0; i < game.itemCount; i++) {
       const it = game.items[i];
       if (it.active && it.type === k) {
@@ -42,7 +43,7 @@ export function currentObjective(game) {
     }
   }
   const b = bossAlive(game);
-  if (lvl.boss && b) return { kind: 'boss', x: b.x, y: b.y, label: 'DEFEAT THE WARDEN', color: OBJ_COLORS.boss };
+  if (lvl.boss && b) return { kind: 'boss', x: b.x, y: b.y, label: b.type === 'overlord' ? 'DEFEAT THE OVERLORD' : 'DEFEAT THE WARDEN', color: OBJ_COLORS.boss };
   const ex = game.map.exit;
   if (ex) return { kind: 'exit', x: ex.x, y: ex.y, label: 'REACH THE EXIT', color: OBJ_COLORS.exit };
   return null;

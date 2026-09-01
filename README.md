@@ -54,6 +54,11 @@ queda intacta y trazable: lo nuevo lleva prefijo `flash:` en git, tag
   **ametralladora** (spread creciente); teclas 5/6, cajas de cohetes en
   E2M1. La dificultad dura esparce bichos extra por el mapa (no gemelos
   pegados).
+- **v1.6.0** — Lost Soul, Baron y Pain Elemental (genera imps).
+- **v1.7.0** — Powerups: berserk, megasfera (tope 200 hp), invisibilidad
+  parcial, traje anti-radiación y **suelo tóxico**.
+- **v1.8.0** — 5 niveles: **E4M1 CROSSROADS** (hub de dos llaves) y
+  **E5M1 THE SPILL** (radiactivo, jefe final THE OVERLORD en dos fases).
 
 ## Ejecutar
 
@@ -93,9 +98,12 @@ interfiere (solo expone un handle extra).
 ## Niveles
 
 1. **E1M1 HANGAR** — llave roja → puerta R → salida.
-2. **E2M1 ARMORY** — llave azul (sala de llaves) → puerta B → salida.
-3. **E3M1 THE PIT** — arena de **jefe: THE WARDEN**. Mátilo y la salida
-   (sellada mientras vive) te da el **WON**.
+2. **E2M1 ARMORY** — llave azul + paritorio Pain Elemental → salida.
+3. **E3M1 THE PIT** — arena de **jefe: THE WARDEN** (y Baron de esquina).
+4. **E4M1 CROSSROADS** — hub con **las dos llaves**: sin ambas, la salida
+   sur no se abre. Secreto con megasfera en el ala este.
+5. **E5M1 THE SPILL** — vertido radiactivo: sin traje no cruzas; al norte,
+   **THE OVERLORD** (750 hp, dos fases). Mata y huye: aquí está el **WON**.
 
 Notoriedad: el juego siempre dice qué hay que hacer **y hacia dónde** —
 triángulo-compás en el borde superior (rumbo + distancia al objetivo) y
@@ -108,7 +116,7 @@ llave piden el keycard ("RED/BLUE KEYCARD NEEDED").
 ## Testing y QA
 
 ```sh
-node --test                      # suite completa (176 tests)
+node --test                      # suite completa (177 tests)
 node tests/bench.js              # frame-time por escenario (budget 16.66 ms)
 node scripts/qa-browser.mjs      # sweep navegador: 48 posiciones x 8 direcciones
 CHROME_BIN=/ruta/a/chromium-headless node scripts/qa-playthrough.mjs

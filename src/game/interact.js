@@ -80,6 +80,13 @@ export function useAction(game) {
       game.sfx('denied');
       return;
     }
+    const ks = game.levels[game.levelIdx].keys || (game.levels[game.levelIdx].needsKey ? [game.levels[game.levelIdx].needsKey] : []);
+    const missing = ks.find((k) => !game.player[k]);
+    if (missing) {
+      game.setMessage('BOTH KEYCARDS NEEDED');
+      game.sfx('denied');
+      return;
+    }
     levelComplete(game);
     return;
   }
