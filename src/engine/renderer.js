@@ -80,6 +80,8 @@ export class Renderer {
 
     const invW = 2 / W;
     const halfH = H * 0.5;
+    this._haz = map.hasHazard ? map.hazard : null;
+    this._gw = map.gw; this._gh = map.gh;
     const heights = map.heights;
     const doorH = map.doorH;
     const wallTable = assets.wallTable;
@@ -171,6 +173,9 @@ export class Renderer {
     const ceilT = assets.ceilTable;
 
     // floor: rows mid..H-1
+    const haz = this._haz;
+    const hazT = haz ? this.assets.floorTableHaz : null;
+    const gw = this._gw, gh = this._gh;
     for (let y = mid; y < H; y++) {
       const p = y - mid + 0.5;
       const t = halfH / p;
@@ -180,16 +185,24 @@ export class Renderer {
       const sx = (2 * tm / W) * sinA;
       const sy = (2 * tm / W) * -cosA;
       const b = lightLevel(t, flash) | 0;
+      const bx = fx, by = fy; // raw flight coords for the hazard lookup
       fx -= Math.floor(fx);
       fy -= Math.floor(fy);
       let u = (fx * 64) | 0;
       let v = (fy * 64) | 0;
       let off = y * W;
+      let rx = bx, ry = by;
       for (let x = 0; x < W; x++) {
-        buf[off + x] = floorT[((v << 6) + u) << 6 | b];
+        let tab = floorT;
+        if (haz) {
+          const cx = rx | 0, cy = ry | 0;
+          if (cx >= 0 && cy >= 0 && cx < gw && cy < gh && haz[cy * gw + cx]) tab = hazT;
+        }
+        buf[off + x] = tab[((v << 6) + u) << 6 | b];
         u += sx * 64; v += sy * 64;
         if (u >= 64) u -= 64; else if (u < 0) u += 64;
         if (v >= 64) v -= 64; else if (v < 0) v += 64;
+        rx += sx; ry += sy;
       }
     }
     // ceiling: rows 0..mid-1 (same 2D flight, different table)

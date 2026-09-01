@@ -38,8 +38,8 @@ Procedencia: la BASE (v1.0.0, motor + 3 niveles + QA, 45.8h) la construyó
       jugador cerca), chaingun con spread creciente; sprites + sonidos
 - [x] **5. Enemigos nuevos** → v1.6.0: ✅ Lost Soul (melee veloz), Baron (duro,
       doble bolt), Pain Elemental (spawn imps, respeta ENEMY_MAX=48). Colocados en E2M1/E3M1.
-- [ ] **6. Items + E4M1/E5M1** → v1.7.0: berserk, megasphere, invisibilidad,
-      traje radiación + suelo de peligro; E4 hub multi-llave; E5 usa
+- [x] **6a. Items + hazards** → v1.7.0: ✅ berserk, megasphere, invisibilidad,
+- [ ] **6b. E4M1/E5M1 + jefe final** → v1.8.0: E4 hub multi-llave; E5 usa
       `heights` 2/3 + jefe final 2 fases
 - [ ] **7. Meta** → v1.8.0: guardado/continuar (localStorage), stats de nivel
       (kills %/secrets %, `stats` ya existe), sliders FOV/sens/gamma

@@ -503,3 +503,21 @@ sentía, recibir no se veía, y todo sonaba en el centro de la cabeza.
 - Tests: **171** (+5: sets de sprite, sprint+melee, doble bolt, parto con
   cap, ceiling del pool). Sweep CLEAN, playthrough PASS (el bot ni pisa la
   esquina del Baron y sobrevive al paritorio de E2M1).
+
+## v1.7.0 — [flash] Etapa F6 (1/2): powerups y suelo tóxico
+- **BERSERK PACK** (`!`): puños ×2 permanentes + 20 hp (cap 200). En la
+  sala norte de E3M1 — el ariete para el tanque que no encuentra plasma.
+- **MEGASPHERE** (`M`): cura hasta el nuevo techo de **200 hp** (las boticas
+  siguen capped en 100, así que sobre-pasar de 100 exige buscar la esfera).
+- **INVISIBILIDAD PARCIAL** (`I`, 30 s): los ranged triplican su dispersión
+  y los hitscan fallan la mitad de las ráfagas. En la esquina NE de E2M1.
+- **TRAJE ANTIRRADIACIÓN** (`U`, 60 s) + **suelo tóxico `~`**: parse nuevo
+  (`map.hazard/hasHazard`), el piso tóxico se pinta con una tabla propia
+  teñida de naranja (generada en `makeTables`) y quema 10 hp/s con el
+  `hurtPlayer` de siempre (geiger sfx); el traje lo anula. Celdas de
+  peligro reales se usan en E5M1 (siguiente entrega).
+- **Fix de carácter**: el Lost Soul usaba `L`, que en `WALLS` es muro bajo
+  — nunca llegaba a aparecer. Ahora es `l` (en E2M1 ya visible). Lección:
+  los códigos de entidad y de muro comparten el espacio de glifos.
+- Tests: **176** (+5 power/hazard). Bench plano (la rama tóxica del
+  floorcaster solo corre en niveles con `~`). Sweep CLEAN, playthrough PASS.

@@ -53,6 +53,32 @@ function paintAmmoR(c) {
   c.fillStyle = '#30343a'; c.fillRect(14, 24, 4, 4); // fin block
 }
 
+function paintBerserk(c) {
+  c.fillStyle = '#7a4a2a'; c.fillRect(11, 16, 10, 14); // can
+  c.fillStyle = '#9a6a3a'; c.fillRect(11, 16, 10, 2);
+  c.fillStyle = '#e8e0d0'; c.fillRect(13, 19, 6, 6); // skull label
+  c.fillStyle = '#3a2a1a'; c.fillRect(14, 20, 1.6, 1.6); c.fillRect(16.6, 20, 1.6, 1.6);
+}
+
+function paintMega(c) {
+  c.fillStyle = '#3a5ac8'; c.beginPath(); c.arc(16, 21, 7, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#8ab0ff'; c.beginPath(); c.arc(13.5, 18.5, 2.6, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#141f4a'; c.beginPath(); c.arc(16, 24, 3.4, 0, Math.PI); c.fill();
+}
+
+function paintInvis(c) {
+  c.fillStyle = 'rgba(150,220,220,0.85)'; c.beginPath(); c.arc(16, 21, 6.4, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#d8f8f8'; c.beginPath(); c.arc(14, 19, 2, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#4a8a8a'; c.fillRect(10, 27, 12, 2); // stand
+}
+
+function paintSuit(c) {
+  c.fillStyle = '#3a8a3a'; c.fillRect(10, 16, 12, 13); // vest
+  c.fillStyle = '#2a6a2a'; c.fillRect(10, 16, 3, 13);
+  c.fillStyle = '#c8d040'; c.fillRect(13, 19, 6, 2); // warning stripe
+  c.fillStyle = '#1c3a1c'; c.fillRect(12, 23, 8, 4);
+}
+
 function paintAmmoPl(c) {
   c.fillStyle = '#5a6a7a'; c.fillRect(12, 19, 8, 12);
   c.fillStyle = '#7c8c9c'; c.fillRect(12, 19, 8, 2);
@@ -114,6 +140,10 @@ const PAINT = {
   ammoS: paintAmmoS,
   ammoPl: paintAmmoPl,
   ammoR: paintAmmoR,
+  berserk: paintBerserk,
+  mega: paintMega,
+  invis: paintInvis,
+  suit: paintSuit,
   keyR: (c) => paintKey(c, '#c84030', '#7a2018'),
   keyB: (c) => paintKey(c, '#3860c8', '#1c3a7a'),
   exit: paintExit,

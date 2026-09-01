@@ -112,6 +112,7 @@ export class Game {
       const th = this.assets.floorTables[(def.theme ?? 0) % this.assets.floorTables.length];
       this.assets.floorTable = th.floor;
       this.assets.ceilTable = th.ceil;
+      this.assets.floorTableHaz = th.floorHaz || th.floor;
     }
     this.state = 'PLAY';
     this.paused = false;
@@ -234,6 +235,20 @@ export class Game {
     if (p.flash > 0) p.flash = Math.max(0, p.flash - dt * 5);
     if (p.shake > 0) p.shake = Math.max(0, p.shake - dt * 2.2);
     if (p.hurtVig > 0) p.hurtVig = Math.max(0, p.hurtVig - dt * 1.3);
+    if (p.invis > 0) p.invis = Math.max(0, p.invis - dt);
+    if (p.suit > 0) p.suit = Math.max(0, p.suit - dt);
+    if (this.map.hasHazard && p.suit <= 0) {
+      // toxic floor: steady 10 hp/s chunks through the normal hurt path
+      const cell = Math.floor(p.y) * this.map.gw + Math.floor(p.x);
+      if (this.map.hazard[cell]) {
+        p.hazAcc = (p.hazAcc || 0) + dt;
+        if (p.hazAcc >= 0.3) {
+          p.hazAcc = 0;
+          this.hurtPlayer(3, p.x, p.y);
+          this.sfx('hazard');
+        }
+      } else p.hazAcc = 0;
+    }
     if (this.state === 'PLAY') updateEnemies(this, dt);
     this.soundLen = 0; // sounds consumed by enemies this tick; clear last
     if (this.message.t > 0) {

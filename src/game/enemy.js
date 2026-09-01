@@ -122,7 +122,9 @@ export function fireEnemyProjectile(game, e) {
   const dx = p.x - e.x, dy = p.y - e.y;
   const base = Math.atan2(dy, dx);
   // small inaccuracy (±~1.1deg) so throws usually connect at mid range
-  const acc = (((dx * 9301 + dy * 49297 + (e.x * 7) | 0) % 128 - 64) * 0.02) / 64;
+  // small inaccuracy (±~1.1deg) so throws usually connect at mid range;
+  // partial invisibility triples the scatter
+  const acc = (((dx * 9301 + dy * 49297 + (e.x * 7) | 0) % 128 - 64) * 0.02 * (p.invis > 0 ? 3 : 1)) / 64;
   const sp = def.pKind === 'bolt' ? 8 : 6.5;
   for (let k = 0; k < n; k++) {
     const pr = game.projectiles.acquire();
@@ -291,7 +293,10 @@ export function updateEnemies(game, dt) {
         } else { // hitscan burst
           if (e.cd <= 0 && sees && dist <= def.range) {
             e.cd = def.cd * diffOf(game).cdMul; e.anim = 'atk'; e.animT = 0;
-            game.hurtPlayer(def.dmg, e.x, e.y);
+            // under partial invisibility half the tracers go wide (deterministic)
+            if (!(p.invis > 0 && (((e.x * 93 + e.y * 41 + game.frame * 7) >>> 3) % 10) < 5)) {
+              game.hurtPlayer(def.dmg, e.x, e.y);
+            }
             game.emitSound(e.x, e.y, 4.5);
           } else if (e.anim !== 'atk') e.anim = 'idle';
           if (e.anim === 'atk' && e.animT > 0.35) e.anim = 'idle';

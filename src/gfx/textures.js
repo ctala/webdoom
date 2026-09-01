@@ -275,11 +275,20 @@ export function makeTables(document) {
   wallTable[9] = mk((p) => paintDoor(p, 66, 1));   // red
   wallTable[10] = mk((p) => paintDoor(p, 77, 2));  // blue
   wallTable[11] = mk((p) => paintDoor(p, 88, 3));  // secret (brick look)
-  const floorTables = [
-    { floor: mk(paintFloor0), ceil: mk(paintCeil0) },
-    { floor: mk(paintFloor1), ceil: mk(paintCeil1) },
-    { floor: mk(paintFloor2), ceil: mk(paintCeil2) },
-  ];
+  const tintHaz = (tbl) => {
+    const out = tbl.slice();
+    for (let i = 0; i < out.length; i++) {
+      const c = out[i];
+      const r = Math.min(255, (c & 0xff) + 70), g = (c >>> 8) * 0.8 | 0, b = (c >>> 16) * 0.5 | 0;
+      out[i] = (0xff << 24) | (b << 16) | (g << 8) | r;
+    }
+    return out;
+  };
+  const floorTables = [0, 1, 2].map((k) => {
+    const floor = mk([paintFloor0, paintFloor1, paintFloor2][k]);
+    const ceil = mk([paintCeil0, paintCeil1, paintCeil2][k]);
+    return { floor, ceil, floorHaz: tintHaz(floor) };
+  });
   return {
     M, TEX: S,
     wallTable,

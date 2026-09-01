@@ -29,7 +29,7 @@ const WALLS = new Map([
   ['L', [W_STONE, H_LOW]],
 ]);
 
-const ENT_CODES = { i: 'imp', d: 'demon', c: 'commander', v: 'caco', J: 'boss', h: 'health', g: 'armor', m: 'ammoP', s: 'ammoS', p: 'ammoPl', r: 'ammoR', k: 'keyR', b: 'keyB', L: 'lostsoul', N: 'baron', Q: 'pain' };
+const ENT_CODES = { i: 'imp', d: 'demon', c: 'commander', v: 'caco', J: 'boss', h: 'health', g: 'armor', m: 'ammoP', s: 'ammoS', p: 'ammoPl', r: 'ammoR', k: 'keyR', b: 'keyB', l: 'lostsoul', N: 'baron', Q: 'pain', '!': 'berserk', M: 'mega', I: 'invis', U: 'suit' };
 
 export function parseLevel(rows, name = '') {
   const gh = rows.length;
@@ -38,6 +38,7 @@ export function parseLevel(rows, name = '') {
   const solid = new Uint8Array(gw * gh);
   const heights = new Uint8Array(gw * gh);
   const doorType = new Uint8Array(gw * gh); // 1=D 2=R 3=B 4=S (0 = none)
+  const hazard = new Uint8Array(gw * gh); // 1 = toxic floor (damages without suit)
   const ents = [];
   let player = null;
   let exit = null;
@@ -76,7 +77,8 @@ export function parseLevel(rows, name = '') {
           break;
         default: {
           const code = ENT_CODES[ch];
-          if (code) ents.push({ type: code, x: cx + 0.5, y: cy + 0.5 });
+          if (ch === '~') hazard[idx] = 1;
+          else if (code) ents.push({ type: code, x: cx + 0.5, y: cy + 0.5 });
           else if (ch !== ' ') { solid[idx] = W_BRICK; heights[idx] = H_NORM; }
         }
       }
@@ -93,7 +95,8 @@ export function parseLevel(rows, name = '') {
   }
 
   return {
-    name, gw, gh, solid, heights, doorType,
+    name, gw, gh, solid, heights, doorType, hazard,
+    hasHazard: hazard.some((v) => v === 1),
     player: player || { x: 1.5, y: 1.5 },
     exit, ents,
   };

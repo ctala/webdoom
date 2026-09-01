@@ -98,6 +98,7 @@ export const SFX_BANK = {
   switch: (t0, out) => { tone('square', 700, 500, t0, 0.05, 0.15, out); tone('square', 900, 700, t0 + 0.07, 0.05, 0.15, out); },
   door: (t0, out) => { noise(0.5, 0.4, 300, t0, 1, out); },
   pickup: (t0, out) => { tone('sine', 660, 990, t0, 0.12, 0.2, out); },
+  hazard: (t0, out) => { noise(0.08, 0.25, 3000, t0, 1, out); tone('square', 1800, 1500, t0, 0.05, 0.06, out); },
   denied: (t0, out) => { tone('square', 110, 70, t0, 0.16, 0.3, out); },
   complete: (t0, out) => { tone('sine', 520, 780, t0, 0.12, 0.25, out); tone('sine', 780, 1170, t0 + 0.13, 0.18, 0.25, out); },
   enrage: (t0, out) => { tone('sawtooth', 90, 230, t0, 0.5, 0.3, out); noise(0.4, 0.2, 500, t0, 1, out); },

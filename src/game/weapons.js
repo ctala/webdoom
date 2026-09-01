@@ -100,7 +100,7 @@ function melee(game, def, gw, gh) {
     best = e; bestD = t;
   }
   if (best) {
-    damageEnemy(game, best, dmgRoll(game, def));
+    damageEnemy(game, best, dmgRoll(game, def) * (p.berserk ? 2 : 1));
     spawnBlood(game, best.x, best.y, 7, p.ang, 4);
     game.emitSound(best.x, best.y, 3);
     game.sfx('hit');

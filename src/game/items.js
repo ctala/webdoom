@@ -26,6 +26,10 @@ export const ITEM_DEF = {
   ammoS: { name: '+SHELLS', viewH: 0.30, ammo: ['ammoS', 4], cap: 50 },
   ammoPl: { name: '+PLASMA CELLS', viewH: 0.34, ammo: ['ammoPl', 10], cap: 100 },
   ammoR: { name: '+ROCKET AMMO', viewH: 0.32, ammo: ['ammoR', 6], cap: 100 },
+  berserk: { name: 'BERSERK PACK!', viewH: 0.40, berserk: true },
+  mega: { name: 'MEGASPHERE', viewH: 0.36, mega: true },
+  invis: { name: 'PARTIAL INVISIBILITY', viewH: 0.32, invis: 30 },
+  suit: { name: 'RADIATION SUIT', viewH: 0.34, suit: 60 },
   keyR: { name: 'GOT THE RED KEYCARD', viewH: 0.42, lift: 0.16, key: 'keyR' },
   keyB: { name: 'GOT THE BLUE KEYCARD', viewH: 0.42, lift: 0.16, key: 'keyB' },
 };
@@ -78,6 +82,16 @@ export function updateItems(game) {
     } else if (d.key) {
       if (p[d.key]) take = false;
       else p[d.key] = true;
+    } else if (d.berserk) {
+      p.berserk = true;
+      p.hp = Math.min(200, p.hp + 20);
+    } else if (d.mega) {
+      if (p.hp >= 200) take = false;
+      else p.hp = Math.min(200, p.hp + 100);
+    } else if (d.invis) {
+      p.invis = d.invis; // refresh the clock
+    } else if (d.suit) {
+      p.suit = d.suit; // refresh the clock
     }
     if (take) {
       it.active = false;
