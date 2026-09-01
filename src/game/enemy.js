@@ -59,8 +59,9 @@ export function setupEnemies(game) {
   game.enemyCount = 0;
   const { gw, solid } = game.map;
   const spawn = (type, x, y) => spawnEnemy(game, type, x, y);
-  // mobMul: ITYTD drops every third spawn (boss exempt); UV/Nightmare add a
-  // twin beside originals that have open ground. The boss is sacred.
+  // mobMul: ITYTD drops every third spawn (boss exempt); UV/Nightmare add
+  // extras SCATTERED across the whole map (greedy farthest-point), never a
+  // twin glued to an original. The boss is sacred.
   const ratio = diffOf(game).mobMul;
   let kept = 0, idx = 0;
   for (const e of game.map.ents) {
@@ -92,15 +93,32 @@ export function setupEnemies(game) {
       }
     }
     let ti = 0;
-    for (let pass = 0; pass < 2 && extra > 0 && cand.length; pass++) {
-      const step = pass ? 1 : Math.max(1, Math.ceil(cand.length / extra));
-      for (let ci = 0; ci < cand.length && extra > 0; ci += step) {
+    // greedy farthest-point (hash-ordered for determinism): each extra is
+    // placed in the open cell that maximizes its distance to everything
+    // already standing -> spread across rooms, never a pile in one corner.
+    const hk = (x, y) => {
+      let h = (Math.floor(x) * 73856093) ^ (Math.floor(y) * 19349663);
+      h = (h ^ (h >>> 13)) >>> 0;
+      return h / 4294967295;
+    };
+    while (extra > 0 && cand.length) {
+      let bi = 0, bm = -1;
+      for (let ci = 0; ci < cand.length; ci++) {
         const [x, y] = cand[ci];
-        if (occupied.some(([ox, oy]) => (ox - x) * (ox - x) + (oy - y) * (oy - y) < 6.25)) continue;
-        if (spawn(types[ti++ % types.length], x, y)) {
-          extra--;
-          occupied.push([x, y]);
+        let m = 1e9;
+        for (const [ox, oy] of occupied) {
+          const d = (ox - x) * (ox - x) + (oy - y) * (oy - y);
+          if (d < m) m = d;
         }
+        m += hk(x, y) * 0.5; // tie-break within the same room
+        if (m > bm) { bm = m; bi = ci; }
+      }
+      const [x, y] = cand[bi];
+      cand[bi] = cand[cand.length - 1];
+      cand.pop();
+      if (bm >= 6.25 && spawn(types[ti++ % types.length], x, y)) {
+        extra--;
+        occupied.push([x, y]);
       }
     }
   }

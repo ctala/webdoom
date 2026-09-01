@@ -7,6 +7,7 @@ import { scanUse } from '../game/interact.js';
 import { currentObjective, compassInfo } from '../game/objective.js';
 import { DIFFS } from '../game/difficulty.js';
 import { WEAPON_DEF } from '../game/weapons.js';
+import { hasSave, levelStats } from '../game/save.js';
 
 // Packed colors (0xAABBGGRR)
 const C_BG = (0xff << 24) | (0x14 << 16) | (0x14 << 8) | 0x14; // near-black strip
@@ -140,8 +141,37 @@ export function renderMenu(game) {
   if ((game.frame / 30 | 0) % 2 === 0) blitCenter(buf, W, 'PRESS ENTER TO START', 156, 2, C_SUB);
   const C_DIFF = (0xff << 24) | (0x3a << 16) | (0xd0 << 8) | 0xd0;
   const sel = game.diff | 0;
-  blitCenter(buf, W, DIFFS[sel].name, 170, 1, C_DIFF);
-  blitCenter(buf, W, DIFFS.map((d, i) => (i === sel ? '*' : ' ') + (i + 1) + ' ' + d.abbr).join('  '), 182, 1, C_SUB);
-  blitCenter(buf, W, 'WASD MOVE - MOUSE LOOK - 1 2 3 4 WEAPONS - E USE', 212, 1, C_SUB);
+  blitCenter(buf, W, DIFFS[sel].name, 168, 1, C_DIFF);
+  blitCenter(buf, W, DIFFS.map((d, i) => (i === sel ? '*' : ' ') + (i + 1) + ' ' + d.abbr).join('  '), 179, 1, C_SUB);
+  if (hasSave() && (game.frame / 40 | 0) % 2 === 0) {
+    const C_CONT = (0xff << 24) | (0x50 << 16) | (0xff << 8) | 0x70;
+    blitCenter(buf, W, 'PRESS C TO CONTINUE', 190, 1, C_CONT);
+  }
+  blitCenter(buf, W, 'WASD MOVE - MOUSE LOOK - 1 2 3 4 5 6 WEAPONS - E USE', 212, 1, C_SUB);
   blitCenter(buf, W, 'TAB AUTOMAP - SHIFT RUN', 224, 1, C_SUB);
+  const o = game.opts || {};
+  blitCenter(buf, W,
+    'FOV ' + (o.fov || 74) + ' [- =]   GAMMA ' + (o.gamma | 0) + ' [ ] SENS X' + ((o.sens || 1).toFixed(2)) + ' , .',
+    236, 1, C_SUB);
+}
+
+/** INTERM state: Doom-style per-level stats screen over the frozen view. */
+export function renderLevelStats(game) {
+  const { W, H } = game;
+  const buf = game.renderer.buf;
+  const C_BIG = (0xff << 24) | (0x30 << 16) | (0xd0 << 8) | 0x40;
+  const C_TXT = (0xff << 24) | (0xd0 << 16) | (0xd0 << 8) | 0xd0;
+  const s = levelStats(game);
+  const mm = (s.time / 60) | 0, ss = (s.time % 60) | 0;
+  const y0 = H * 0.30 | 0;
+  for (let y = y0 - 14; y <= y0 + 74; y++) {
+    for (let x = W * 0.2 | 0; x < (W * 0.8) | 0; x++) {
+      buf[y * W + x] = y === y0 - 14 || y === y0 + 74 || x === (W * 0.2 | 0) || x === ((W * 0.8 | 0) - 1)
+        ? C_BIG : ((0xff << 24) | (0x0a << 16) | (0x10 << 8) | 0x0a);
+    }
+  }
+  blitCenter(buf, W, (game.levels[game.levelIdx] || {}).name || '', y0 - 4, 2, C_BIG);
+  blitCenter(buf, W, 'KILLS ' + s.kills + ' PCT  ' + s.killed + ' OF ' + s.killTotal, y0 + 22, 1, C_TXT);
+  blitCenter(buf, W, 'SECRETS ' + s.secrets + ' PCT', y0 + 38, 1, C_TXT);
+  blitCenter(buf, W, 'TIME ' + mm + ':' + (ss < 10 ? '0' : '') + ss, y0 + 54, 1, C_TXT);
 }

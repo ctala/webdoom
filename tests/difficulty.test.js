@@ -62,6 +62,7 @@ test('mobMul scales enemy count; boss never added or removed', () => {
   const counts = [];
   let scattered = 0;
   for (let d = 0; d < 4; d++) {
+    const extras = [];
     const g = makeGame();
     setDifficulty(g, d);
     g.loadLevel(2);
@@ -80,7 +81,14 @@ test('mobMul scales enemy count; boss never added or removed', () => {
           assert.ok(Math.hypot(e.x - o.x, e.y - o.y) > 2.4,
             DIFFS[d].name + ': extras are not glued to map spawns');
         }
+        extras.push([e.x, e.y]);
         scattered++;
+      }
+    }
+    for (let i = 0; i < extras.length; i++) {
+      for (let j = i + 1; j < extras.length; j++) {
+        const d2 = Math.hypot(extras[i][0] - extras[j][0], extras[i][1] - extras[j][1]);
+        assert.ok(d2 > 3.5, DIFFS[d].name + `: extras too close (${d2.toFixed(1)} apart)`);
       }
     }
     assert.equal(boss, 1, DIFFS[d].name + ': exactly one Warden');

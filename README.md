@@ -59,6 +59,10 @@ queda intacta y trazable: lo nuevo lleva prefijo `flash:` en git, tag
   parcial, traje anti-radiación y **suelo tóxico**.
 - **v1.8.0** — 5 niveles: **E4M1 CROSSROADS** (hub de dos llaves) y
   **E5M1 THE SPILL** (radiactivo, jefe final THE OVERLORD en dos fases).
+- **v1.9.0** — Meta: **guardar/continuar** (C en el menú), pantalla de
+  **stats por nivel** (kills %/secrets %/tiempo) y opciones FOV/gamma/
+  sensibilidad (`-`/`=`, `[`/`]`, `,`/`.`). Los bichos extra de dificultad
+  dura se reparten por todo el mapa (greedy farthest-point).
 
 ## Ejecutar
 
@@ -88,6 +92,10 @@ interfiere (solo expone un handle extra).
 | Ratón            | apuntar (pointer lock)                    |
 | Click izq. / Espacio | disparar                               |
 | 1 / 2 / 3 / 4 / 5 / 6 (o rueda) | puños / pistola / escopeta / plasma / ametralladora / cohete |
+| C (en el menú) | continuar partida guardada |
+| `-` / `=` | FOV |
+| `[` / `]` | gamma |
+| `,` / `.` | sensibilidad del ratón |
 | E o U            | usar: abrir puertas, secretos, salida     |
 | TAB (mantener)   | automapa                                  |
 | SHIFT            | correr                                    |
@@ -116,7 +124,7 @@ llave piden el keycard ("RED/BLUE KEYCARD NEEDED").
 ## Testing y QA
 
 ```sh
-node --test                      # suite completa (177 tests)
+node --test                      # suite completa (182 tests)
 node tests/bench.js              # frame-time por escenario (budget 16.66 ms)
 node scripts/qa-browser.mjs      # sweep navegador: 48 posiciones x 8 direcciones
 CHROME_BIN=/ruta/a/chromium-headless node scripts/qa-playthrough.mjs

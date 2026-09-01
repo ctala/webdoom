@@ -541,3 +541,27 @@ sentía, recibir no se veía, y todo sonaba en el centro de la cabeza.
   niveles: PASS (OVERLORD cae en 22.9 s).
 - El test que asumía "E3M1 es el último" ahora valida la progresión; +1
   test nuevo del gate de dos llaves. Suite: **177**.
+
+## v1.9.0 — [flash] Etapa F7: meta (guardado, stats, opciones) + esparcido real
+- **Guardado/continuar**: cada entrada de nivel autosavea en `wd.save`
+  (nivel, dificultad, hp/armor/munición/llaves/berserk, stats). El menú
+  muestra "PRESS C TO CONTINUE" parpadeante si hay partida; **C** reanuda
+  (con fallback a nueva partida si el save está corrupto o el índice es
+  inválido). WON borra el save. En node/tests todo va guarded (stub).
+- **Pantalla de stats (INTERM)**: al completar nivel, caja Doom-style sobre
+  la vista congelada: nombre, **KILLS %** (contra los enemigos del nivel,
+  incluidos los paridos por el Pain Elemental), SECRETS % y TIEMPO. La
+  base de medición es `levelStart` (snapshot en `loadLevel`).
+- **Opciones en vivo (persistidas en `wd.opts`)**: `-`/`=` FOV (60–100°,
+  ajusta el plano de cámara), `[`/`]` gamma (±6, vía `renderer.gamma`),
+  `,`/`.` sensibilidad de ratón (×0.4–2.5, en `turn()`). Se aplican al
+  arrancar y se muestran en la línea de controles del título.
+- **Feedback del jugador (mobs)**: el `mobMul` de UV/Nightmare ya no usa
+  stride por filas (que aún amontonaba en la zona abierta más cercana) —
+  ahora es **greedy farthest-point determinista**: cada extra se coloca en
+  la celda libre que maximiza su distancia al bicho más cercano,
+  desempate por hash. Extras en salas distintas garantizado (test nuevo:
+  los extras entre sí a >3.5u).
+- Tests: **182** (+5 meta: autosave/continue, save corrupto, levelStats,
+  opciones con clamp, +assert de dispersión). Sweep CLEAN, playthrough
+  PASS (bot genérico por los 5 niveles, WON).

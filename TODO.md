@@ -41,8 +41,8 @@ Procedencia: la BASE (v1.0.0, motor + 3 niveles + QA, 45.8h) la construyó
 - [x] **6a. Items + hazards** → v1.7.0: ✅ berserk, megasphere, invisibilidad,
 - [x] **6b. E4M1/E5M1 + jefe final** → v1.8.0: ✅ E4 hub multi-llave; E5 usa
       `heights` 2/3 + THE OVERLORD 2 fases. Bot de playthrough generico por niveles.
-- [ ] **7. Meta** → v1.8.0: guardado/continuar (localStorage), stats de nivel
-      (kills %/secrets %, `stats` ya existe), sliders FOV/sens/gamma
+- [x] **7. Meta** → v1.9.0: guardado/continuar (localStorage), stats de
+      nivel (kills %/secrets %/tiempo), ajustes FOV/gamma/sens (teclas).
 - [ ] **8. Pitch (mirar arriba/abajo)** → v2.0.0: renderer + spriteRenderer +
       partículas. Riesgoso: último, 2-3 sesiones.
 

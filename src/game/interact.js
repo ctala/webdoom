@@ -1,6 +1,7 @@
 // Player interaction with the world: E/U opens doors, secrets and the exit.
 
 import { bossAlive } from './objective.js';
+import { clearSave } from './save.js';
 
 /** Collect door cells for the level (all four door kinds animate). */
 export function initDoors(game) {
@@ -119,5 +120,6 @@ export function levelComplete(game) {
     game.state = 'WON';
     game.sfx('complete');
     game.setMessage('YOU ESCAPED');
+    clearSave(); // a finished run does not resume
   }
 }

@@ -3,6 +3,7 @@
 
 import { Game } from './game/game.js';
 import { setDifficulty, DIFFS } from './game/difficulty.js';
+import { continueGame, tweakOpt } from './game/save.js';
 import { makeTables } from './gfx/textures.js';
 import { initAudio, playSfx } from './audio/sfx.js';
 import { startMusic } from './audio/music.js';
@@ -150,6 +151,22 @@ window.addEventListener('keydown', (e) => {
   if (game.state !== 'MENU' && game.state !== 'DEAD') return;
   if (e.code === 'ArrowLeft') { pickDifficulty(game.diff - 1); e.preventDefault(); }
   else if (e.code === 'ArrowRight') { pickDifficulty(game.diff + 1); e.preventDefault(); }
+  else if (e.code === 'KeyC' && game.state === 'MENU') {
+    unlockAudio(); tryLock();
+    if (!continueGame(game)) game.loadLevel(0); // stale save: fall back to new game
+  }
+});
+// live options: -/= FOV, [/] gamma, , . mouse sensitivity (persisted)
+window.addEventListener('keydown', (e) => {
+  if (game.state !== 'PLAY') return;
+  if (e.code === 'Minus') tweakOpt(game, 'fov', -2);
+  else if (e.code === 'Equal') tweakOpt(game, 'fov', 2);
+  else if (e.code === 'BracketLeft') tweakOpt(game, 'gamma', -1);
+  else if (e.code === 'BracketRight') tweakOpt(game, 'gamma', 1);
+  else if (e.code === 'Comma') tweakOpt(game, 'sens', -0.1);
+  else if (e.code === 'Period') tweakOpt(game, 'sens', 0.1);
+  else return;
+  e.preventDefault();
 });
 
 window.addEventListener('keydown', (e) => {

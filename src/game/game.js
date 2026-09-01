@@ -21,9 +21,10 @@ import { makeFlatBg } from '../gfx/assets.js';
 import { castRay } from '../engine/raycaster.js';
 import { makeItems, setupItems, updateItems, renderItems } from './items.js';
 import { initDoors, updateDoors, useAction, updateIntermission } from './interact.js';
-import { renderHud, renderMenu, renderReticle } from '../gfx/hud.js';
+import { renderHud, renderMenu, renderReticle, renderLevelStats } from '../gfx/hud.js';
 import { renderAutomap } from './automap.js';
 import { diffOf } from './difficulty.js';
+import { saveGame, clearSave, loadOpts, applyOpts, levelStats } from './save.js';
 import { E1M1 } from '../../levels/e1m1.js';
 import { E2M1 } from '../../levels/e2m1.js';
 import { E3M1 } from '../../levels/e3m1.js';
@@ -77,6 +78,9 @@ export class Game {
     this.input = { up: false, down: false, left: false, right: false, run: false, fire: false, use: false, map: false };
     this.frame = 0;
     this.loadLevel(0);
+    this._booted = true;
+    this.opts = loadOpts();
+    applyOpts(this, this.opts);
     this.state = 'MENU'; // title screen; ENTER starts (main.js)
   }
 
@@ -107,6 +111,10 @@ export class Game {
     this.rng = 0x1234abcd;
     this.stats.levelTime = 0;
     this.secretCounted = false;
+    this.levelStart = {
+      kills: this.stats.kills, secrets: this.stats.secrets,
+      totalSecrets: this.stats.totalSecrets, totalKillsBefore: this.stats.totalKills,
+    };
     initDoors(this);
     this.setupLevelEntities();
     // per-level theme: floor + ceiling tables
@@ -121,6 +129,7 @@ export class Game {
     this.rebuildView();
     if (def.objective) { this.setMessage(def.name + ' - ' + def.objective); this.message.t = 6; }
     else this.setMessage(def.name);
+    if (this._booted) saveGame(this); // autosave at every level entry (stage 7)
   }
 
   /** Restart the current level (after death). Full intermission comes in stage 6. */
@@ -151,7 +160,7 @@ export class Game {
   }
 
   turn(mx) {
-    this.player.ang -= mx * 0.0021;
+    this.player.ang -= mx * 0.0021 * (this.sens || 1);
   }
 
   /** Weapon switch (keys 1-4 / wheel); message feedback before HUD. */
@@ -392,6 +401,7 @@ export class Game {
     if (this.state === 'PLAY') renderHud(this);
     if (this.state === 'PLAY' && this.input.map) renderAutomap(this);
     if (this.state === 'MENU') renderMenu(this);
+    if (this.state === 'INTERM') renderLevelStats(this);
     if (ctx && this.imageData) ctx.putImageData(this.imageData, 0, 0);
   }
 
