@@ -43,7 +43,7 @@ Procedencia: la BASE (v1.0.0, motor + 3 niveles + QA, 45.8h) la construyó
       `heights` 2/3 + THE OVERLORD 2 fases. Bot de playthrough generico por niveles.
 - [x] **7. Meta** → v1.9.0: guardado/continuar (localStorage), stats de
       nivel (kills %/secrets %/tiempo), ajustes FOV/gamma/sens (teclas).
-- [ ] **8. Pitch (mirar arriba/abajo)** → v2.0.0: renderer + spriteRenderer +
+- [x] **8. Pitch (mirar arriba/abajo)** → v2.0.0: ✅ renderer + spriteRenderer +
       partículas. Riesgoso: último, 2-3 sesiones.
 
 ## Verificación por etapa (reglas del repo)

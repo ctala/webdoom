@@ -103,7 +103,10 @@ window.addEventListener('mouseup', (e) => {
   if (e.button === 0) input.fire = false;
 });
 window.addEventListener('mousemove', (e) => {
-  if (locked()) game.turn(e.movementX);
+  if (locked()) {
+    game.turn(e.movementX);
+    game.pitchBy(-e.movementY * 0.0011 * (game.sens || 1));
+  }
 });
 function tryLock() {
   // Chrome rejects a re-lock within ~1.25s after an ESC exit: don't let that
@@ -148,6 +151,12 @@ let savedDiff = 1;
 try { savedDiff = (parseInt(localStorage.getItem('wd.diff'), 10) | 0); } catch (e) { /* private mode */ }
 setDifficulty(game, savedDiff);
 window.addEventListener('keydown', (e) => {
+  if (game.state === 'PLAY' && (e.code === 'PageUp' || e.code === 'PageDown' || e.code === 'KeyV')) {
+    game.pitchBy(e.code === 'PageUp' ? -0.08 : e.code === 'PageDown' ? 0.08 : 0);
+    if (e.code === 'KeyV') game.centerView();
+    e.preventDefault();
+    return;
+  }
   if (game.state !== 'MENU' && game.state !== 'DEAD') return;
   if (e.code === 'ArrowLeft') { pickDifficulty(game.diff - 1); e.preventDefault(); }
   else if (e.code === 'ArrowRight') { pickDifficulty(game.diff + 1); e.preventDefault(); }

@@ -33,7 +33,8 @@ export class Renderer {
     this.depth = new Float32Array(W);
     this.ray = { perp: 0, side: 0, cellX: 0, cellY: 0, hitId: 0, texX: 0 };
     this.flash = 0;
-    this.jy = 0; // screen-space horizon offset (shake), pixels
+    this.jy = 0;
+    this.shear = 0; // pitch horizon shift (px) shared with the sprite pass // screen-space horizon offset (shake), pixels
     this.lights = null; // [{x,y,r,i}] up to 8 dynamic point lights (game.render)
     // radial vignette intensity per pixel (0 center .. 90 corners): used for
     // the low-HP / recent-damage red darkening pass.
@@ -107,7 +108,7 @@ export class Renderer {
       const tbl = wallTable[id];
       if (!tbl) { continue; }
       const lineH = (hU * H) / (2 * d); // px/unit = H/(2d)
-      const yBot = halfH + this.jy + halfH / d;
+      const yBot = halfH + this.jy + this.shear + halfH / d;
       const yTop = yBot - lineH;
       const step = 64 / lineH; // texels per screen row
       const u = Math.min(63, (ray.texX * 64) | 0); // texture COLUMN for this slice
@@ -166,7 +167,7 @@ export class Renderer {
   floorCeil(px, py, cosA, sinA) {
     const { W, H, buf, assets } = this;
     const M = assets.M;
-    const mid = (H >> 1) + this.jy;
+    const mid = (H >> 1) + this.jy + this.shear;
     const halfH = H * 0.5;
     const flash = this.flash;
     const floorT = assets.floorTable;

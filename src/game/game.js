@@ -109,6 +109,7 @@ export class Game {
       blood: this.assets.decalBlood || null, burn: this.assets.decalBurn || null,
     };
     this.rng = 0x1234abcd;
+    this.player.pitch = 0;
     this.stats.levelTime = 0;
     this.secretCounted = false;
     this.levelStart = {
@@ -161,6 +162,16 @@ export class Game {
 
   turn(mx) {
     this.player.ang -= mx * 0.0021 * (this.sens || 1);
+  }
+
+  /** Vertical look (stage 8, [flash]): shear-only pitch, Doom-style. */
+  pitchBy(dy) {
+    this.player.pitch = Math.max(-0.42, Math.min(0.42, this.player.pitch + dy));
+    return this.player.pitch;
+  }
+
+  centerView() {
+    this.player.pitch = 0;
   }
 
   /** Weapon switch (keys 1-4 / wheel); message feedback before HUD. */
@@ -236,6 +247,9 @@ export class Game {
     if (this.state !== 'PLAY' || this.paused) return;
     const p = this.player;
     this.stats.levelTime += dt;
+    this.vShear = Math.tan(p.pitch) * this.H * 0.5;
+    this.renderer.shear = this.vShear;
+    this.spriteR.shear = this.vShear;
     updatePlayer(p, this.input, dt, this.view, this.map);
     if (this.input.use) { useAction(this); this.input.use = false; }
     updateWeapons(this, dt);
@@ -371,6 +385,9 @@ export class Game {
     const jx = sh * Math.sin(this.frame * 0.47) * 0.013;
     this.vAng = p.ang + jx;
     this.vJy = sh * Math.sin(this.frame * 0.71 + 1.3) * 4.5;
+    this.vShear = Math.tan(p.pitch) * this.H * 0.5;
+    this.renderer.shear = this.vShear;
+    this.spriteR.shear = this.vShear;
     this.renderer.jy = this.vJy;
     this.spriteR.jy = this.vJy;
     this.renderer.flash = p.flash;

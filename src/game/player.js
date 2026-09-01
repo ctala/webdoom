@@ -17,6 +17,7 @@ export function createPlayer(x, y, ang = 0) {
     weapon: 2, // 1 fists, 2 pistol, 3 shotgun, 4 plasma
     keyR: false, keyB: false,
     berserk: false, invis: 0, suit: 0, // powerups (stage 6): fists x2 / miss chance / hazard immunity
+    pitch: 0, // vertical look (rad, stage 8); view-only shear like the Doom shear trick
     bob: 0, moved: false, running: false,
     faceHurt: 0, faceDir: 0, // HUD face: hurt level 0..3, dir -1..1
     flash: 0, // muzzle flash light 0..1 (decays in game tick)

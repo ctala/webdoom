@@ -565,3 +565,21 @@ sentía, recibir no se veía, y todo sonaba en el centro de la cabeza.
 - Tests: **182** (+5 meta: autosave/continue, save corrupto, levelStats,
   opciones con clamp, +assert de dispersión). Sweep CLEAN, playthrough
   PASS (bot genérico por los 5 niveles, WON).
+
+## v2.0.0 — [flash] Etapa F8: pitch (mirar arriba/abajo) — major del motor
+- **Vertical look**: el ratón hacia arriba/abajo (con pointer lock),
+  **PageUp/PageDown** y **V** para recentrar. Limitado a ±24°.
+- Implementación estilo Doom (shear, no 3D real): `p.pitch` →
+  `shear = tan(pitch)·H/2` px, aplicado al horizonte de paredes
+  (`renderer.shear`), al vuelo de suelo/techo (`mid`) y a la línea de suelo
+  de los sprites (`spriteRenderer`). Coste: una suma por columna — bench
+  plano.
+- **Los disparos siguen siendo 2D** (colisión en plano): los sprites son
+  losas verticales y el hit ya era generoso verticalmente; mirar arriba te
+  quita al bicho de la pantalla, no te hace fallar físicamente. Decisión
+  documentada, no bug silencioso.
+- `loadLevel` recentra el pitch; el shear vive en `tick` (los tests lo
+  ven sin render).
+- Tests: **186** (+4 pitch: clamps, shear sincronizado render/sprites,
+  prueba de píxeles del desplazamiento exacto, sin crash con shear extremo).
+- Suite + bench (3,1 ms/frame) + sweep CLEAN + playthrough 5 niveles PASS.
