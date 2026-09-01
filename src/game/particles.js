@@ -58,8 +58,10 @@ export function renderParticles(game) {
   const buf = game.renderer.buf;
   const depth = game.renderer.depth;
   const p = game.player;
-  const cosA = Math.cos(p.ang);
-  const sinA = Math.sin(p.ang);
+  const vAng = game.vAng !== undefined ? game.vAng : p.ang;
+  const cosA = Math.cos(vAng);
+  const sinA = Math.sin(vAng);
+  const jy = game.vJy || 0;
   const M = game.assets.M;
   game.particles.each((q) => {
     if (!q.active) return;
@@ -69,7 +71,7 @@ export function renderParticles(game) {
     const L = rx * sinA - ry * cosA;
     const sx = (W * 0.5 + (L / (M * d)) * W * 0.5) | 0;
     if (sx < 0 || sx >= W) return;
-    const sy = (H * 0.5 - q.z * (H / (2 * d))) | 0;
+    const sy = (H * 0.5 + jy - q.z * (H / (2 * d))) | 0;
     if (sy < 0 || sy >= H) return;
     if (depth[sx] <= d + 1e-4) return; // behind a wall
     const c = BLOOD_COLORS[q._poolIdx & 1];

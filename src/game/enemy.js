@@ -155,7 +155,7 @@ export function updateEnemies(game, dt) {
         game.emitSound(e.x, e.y, 7);
         const boss = e.type === 'boss';
         game.spawnBlood(e.x, e.y, boss ? 26 : 12, Math.atan2(game.player.y - e.y, game.player.x - e.x), boss ? 6 : 4.5);
-        game.sfx('edead');
+        game.sfx('edead', e.x, e.y);
         if (boss) {
           game.sfx('bossdie');
           game.setMessage('THE WARDEN FALLS - THE EXIT IS OPEN');
@@ -218,7 +218,7 @@ export function updateEnemies(game, dt) {
               e.cd = def.cd * diffOf(game).cdMul * (isEnraged(e) ? 0.55 : 1); e.anim = 'atk'; e.animT = 0;
               fireEnemyProjectile(game, e);
               game.emitSound(e.x, e.y, 3);
-              game.sfx('eshoot');
+              game.sfx('eshoot', e.x, e.y);
             } else if (e.anim !== 'atk') e.anim = 'idle';
           if (e.anim === 'atk' && e.animT > 0.45) e.anim = 'idle';
         } else if (def.kind === 'melee') {
@@ -284,6 +284,6 @@ export function damageEnemy(game, e, dmg) {
   if (e.type === 'boss' && !e.enraged && isEnraged(e)) {
     e.enraged = true;
     game.setMessage('THE WARDEN IS ENRAGED');
-    game.sfx('enrage');
+    game.sfx('enrage', e.x, e.y);
   }
 }

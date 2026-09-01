@@ -419,3 +419,31 @@ un multiplicador aburrido.
   "IS ENRAGED" podía perderse en reintentos del E3M1.
 - Tests: **152** (+1 mobMul). Bench peor 1,346 ms/frame. Sweep CLEAN,
   playthrough PASS (WON).
+
+## v1.3.0 — [flash] Etapa F2: game feel
+El juego respondía bien en datos pero se sentía muerto: pegar no se
+sentía, recibir no se veía, y todo sonaba en el centro de la cabeza.
+
+- **Screen shake** (`player.shake` + render compartido): al recibir,
+  jitter de yaw (±0.013 rad) + rebote de horizonte (±4.5 px) con
+  decaimiento 0.45 s. Es puramente visual: `vAng`/`vJy` los consumen
+  renderer (paredes+suelo), `spriteRenderer` (billboards) y partículas;
+  la lógica y la colisión siguen en `p.ang`. Temblor pasivo extra con
+  HP<40.
+- **Viñeta roja** (`renderer.applyVignette`): tabla radial precomputada
+  (0 centro, 90 esquinas); al golpear sube `hurtVig` (decae 0.77 s) y
+  con HP<35 queda un 30 % permanente. Post-pass entero al buffer.
+- **Patada del viewmodel**: retroceso hacia abajo proporcional a
+  `swingT` (antes el disparo solo movía el sprite 4 px fijos).
+- **Audio posicional**: `playSfx(name, x, y, player)` — cadena
+  gain→StereoPanner por evento. `panInfo`: pan = −sin(ángulo relativo)
+  (derecha = +1) y atenuación 1/(1+dist·0.12). Enemigos (`eshoot`,
+  `edead`, `enrage`) y puertas ya pasan su posición. En node/tests el
+  AudioContext no existe → todo sigue siendo no-op.
+- **Puños (fix del backlog de la etapa 4)**: frame de golpe compacto
+  (puño al centro, sin la banda de brazo que "iluminaba todo") + frame
+  espejado y paridad `punchParity` que alternan mano en cada swing.
+- Tests: **158** (+6 feel: decay de shake, render con shake, viñeta,
+  pan L/R/dist, espejo de puños, paridad). Peor bench 3,030 ms/frame
+  (viñeta permanente en el escenario de combate; budget 16,66). Sweep
+  CLEAN y playthrough PASS (WON) con el shake activo en el boss fight.

@@ -33,6 +33,33 @@ export class Renderer {
     this.depth = new Float32Array(W);
     this.ray = { perp: 0, side: 0, cellX: 0, cellY: 0, hitId: 0, texX: 0 };
     this.flash = 0;
+    this.jy = 0; // screen-space horizon offset (shake), pixels
+    // radial vignette intensity per pixel (0 center .. 90 corners): used for
+    // the low-HP / recent-damage red darkening pass.
+    this.vig = new Uint8Array(W * H);
+    const cx = W / 2, cy = H / 2;
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const r = Math.hypot((x - cx) / cx, (y - cy) / cy);
+        const v = Math.max(0, r - 0.55) * 2;
+        this.vig[y * W + x] = v > 1 ? 90 : v * 90 | 0;
+      }
+    }
+  }
+
+  /** Post pass: darken toward red by `level` (0..1) using the radial table. */
+  applyVignette(level) {
+    if (level < 0.02) return;
+    const { buf, vig } = this;
+    for (let i = 0; i < buf.length; i++) {
+      const w = (vig[i] * level) | 0;
+      if (!w) continue;
+      const c = buf[i];
+      const m = 256 - w;
+      let r = ((c & 0xff) * m >> 8) + (w * 16 >> 4);
+      if (r > 255) r = 255;
+      buf[i] = (0xff << 24) | ((((c >>> 16) & 0xff) * m >> 8) << 16) | ((((c >>> 8) & 0xff) * m >> 8) << 8) | r;
+    }
   }
 
   /**
@@ -77,7 +104,7 @@ export class Renderer {
       const tbl = wallTable[id];
       if (!tbl) { continue; }
       const lineH = (hU * H) / (2 * d); // px/unit = H/(2d)
-      const yBot = halfH + halfH / d;
+      const yBot = halfH + this.jy + halfH / d;
       const yTop = yBot - lineH;
       const step = 64 / lineH; // texels per screen row
       const u = Math.min(63, (ray.texX * 64) | 0); // texture COLUMN for this slice
@@ -124,7 +151,7 @@ export class Renderer {
   floorCeil(px, py, cosA, sinA) {
     const { W, H, buf, assets } = this;
     const M = assets.M;
-    const mid = H >> 1;
+    const mid = (H >> 1) + this.jy;
     const halfH = H * 0.5;
     const flash = this.flash;
     const floorT = assets.floorTable;

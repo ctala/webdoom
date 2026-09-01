@@ -60,6 +60,7 @@ export function updateWeapons(game, dt) {
   if (slot) p[slot]--;
   p.wpnCd = def.cd;
   p.swingT = def.melee ? 0.25 : 0.18;
+  if (def.melee) p.punchParity ^= 1; // alternate fists L/R
   p.flash = 1;
   game.sfx(p.weapon === 1 ? 'punch' : p.weapon === 2 ? 'pistol' : p.weapon === 3 ? 'shotgun' : 'plasma');
   const { gw, gh } = game.map;

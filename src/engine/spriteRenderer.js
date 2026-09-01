@@ -19,6 +19,7 @@ export class SpriteRenderer {
     // camera
     this.px = 0; this.py = 0; this.cosA = 1; this.sinA = 0;
     this.M = 0.66; this.W = 480; this.H = 270;
+    this.jy = 0; // horizon offset shared with the wall renderer (shake)
     // dim lookup per sprite: multiplier 0..254
     this.dimLut = new Uint8Array(32);
     for (let b = 0; b < 32; b++) this.dimLut[b] = 64 + (190 * b) / 31 | 0;
@@ -52,7 +53,7 @@ export class SpriteRenderer {
     if (it.h < 1.5) return; // too far: invisible
     it.w = it.h * (sw / sh);
     // bottom anchor at the floor line of this distance
-    const groundY = this.H * 0.5 + halfH;
+    const groundY = this.H * 0.5 + this.jy + halfH;
     it.y0 = groundY - (worldH * halfH) - lift * halfH;
     it.tab = tab; it.sw = sw; it.sh = sh;
     it.dim = this.dimLut[b] | 0;

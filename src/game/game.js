@@ -232,6 +232,8 @@ export class Game {
     updateItems(this);
     updateDoors(this, dt);
     if (p.flash > 0) p.flash = Math.max(0, p.flash - dt * 5);
+    if (p.shake > 0) p.shake = Math.max(0, p.shake - dt * 2.2);
+    if (p.hurtVig > 0) p.hurtVig = Math.max(0, p.hurtVig - dt * 1.3);
     if (this.state === 'PLAY') updateEnemies(this, dt);
     this.soundLen = 0; // sounds consumed by enemies this tick; clear last
     if (this.message.t > 0) {
@@ -259,6 +261,8 @@ export class Game {
     while (rel < -Math.PI) rel += 2 * Math.PI;
     p.faceHurt = p.hp > 70 ? 1 : p.hp > 45 ? 2 : p.hp > 20 ? 3 : 4;
     p.faceDir = Math.abs(rel) < Math.PI * 0.75 ? (rel > 0 ? 1 : -1) : 0;
+    p.shake = Math.min(1, p.shake + 0.12 + d * 0.02); // camera kick (game feel)
+    p.hurtVig = Math.min(1, p.hurtVig + 0.2 + d * 0.05); // red screen edge
     this.emitSound(p.x, p.y, 8);
     this.sfx('hurt');
     if (p.hp <= 0) {
@@ -309,15 +313,29 @@ export class Game {
   render(ctx) {
     this.frame++;
     const p = this.player;
+    // game feel: camera shake (decayed p.shake + a low-HP tremor) as a tiny
+    // yaw jitter + horizon bounce, shared by walls, floor, sprites, particles.
+    const sh = Math.min(1, (p.shake || 0) + (p.hp < 40 && this.state === 'PLAY'
+      ? 0.05 + 0.04 * Math.sin(this.frame * 0.16) : 0));
+    const jx = sh * Math.sin(this.frame * 0.47) * 0.013;
+    this.vAng = p.ang + jx;
+    this.vJy = sh * Math.sin(this.frame * 0.71 + 1.3) * 4.5;
+    this.renderer.jy = this.vJy;
+    this.spriteR.jy = this.vJy;
     this.renderer.flash = p.flash;
     this.renderer.render(
-      p.x, p.y, Math.cos(p.ang), Math.sin(p.ang),
+      p.x, p.y, Math.cos(this.vAng), Math.sin(this.vAng),
       this.view, this.map, this.bg,
       this.state === 'PLAY' ? this.explored : null
     );
     this.renderSprites();
     renderParticles(this);
     this.renderViewmodel();
+    if (this.state === 'PLAY') {
+      this.renderer.applyVignette(Math.min(1, p.hurtVig + (p.hp < 35 ? 0.3 : 0)));
+    } else {
+      this.renderer.applyVignette(0);
+    }
     renderReticle(this);
     if (this.state === 'PLAY') renderHud(this);
     if (this.state === 'PLAY' && this.input.map) renderAutomap(this);
@@ -329,7 +347,8 @@ export class Game {
   renderSprites() {
     const sr = this.spriteR;
     const p = this.player;
-    const cosA = Math.cos(p.ang), sinA = Math.sin(p.ang);
+    const vAng = this.vAng !== undefined ? this.vAng : p.ang;
+    const cosA = Math.cos(vAng), sinA = Math.sin(vAng);
     sr.begin(p.x, p.y, cosA, sinA, this.assets.M, this.W, this.H);
     for (let i = 0; i < this.enemyCount; i++) {
       const e = this.enemies[i];
@@ -369,15 +388,18 @@ export class Game {
     const ws = this.viewModels[p.weapon];
     if (!ws) return;
     const fire = p.swingT > 0 && this.state === 'PLAY';
-    const tab = (fire ? ws.fire[0] : ws.idle[0]) || ws.idle[0];
+    // fists alternate hands (fire[1] = mirrored frame); guns keep one fire frame
+    const fi = fire && p.weapon === 1 && ws.fire[1] ? (p.punchParity || 0) : 0;
+    const tab = (fire ? ws.fire[fi] : ws.idle[0]) || ws.fire[0] || ws.idle[0];
     if (!tab) return;
     const { W, H } = this;
     const buf = this.renderer.buf;
     const w = W * 0.36;
     const h = w * (ws.h / ws.w);
     const drop = p.switchT > 0 ? (p.switchT / 0.16) * 10 : 0; // switch anim: rise into place
+    const kick = fire ? (p.swingT / 0.18) * 6 : 0; // recoil kick-down
     const bx = W * 0.5 + W * 0.09 + Math.cos(p.bob) * 3 - w * 0.5; // left edge
-    const by = H - h + drop + Math.sin(p.bob) * 2 + (fire ? -4 : 0);
+    const by = H - h + drop + Math.sin(p.bob) * 2 + (fire ? -4 + kick : 0);
     const x0 = Math.max(0, bx | 0);
     const x1 = Math.min(W - 1, (bx + w) | 0);
     const y0 = Math.max(0, by | 0);

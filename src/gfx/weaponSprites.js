@@ -53,10 +53,13 @@ function paintFist(c, fire) {
     for (const kx of [14, 24, 34]) { c.fillStyle = SKIND; c.fillRect(kx - 1, 52, 2, 4); }
     for (const kx of [94, 104, 114]) { c.fillStyle = SKIND; c.fillRect(kx - 1, 54, 2, 4); }
   } else {
-    // punch: left fist thrusts toward center
-    rect(c, 24, 42, 44, 15, SKIND);
-    blob(c, 68, 48, 13, 11, SKIN);
-    blob(c, 74, 46, 7, 6, '#a0745a');
+    // punch: compact right-hand thrust (no full-width arm band — the old
+    // frame read as "the whole screen lit up"). Left/right parity is a
+    // mirrored frame (see buildWeaponSprites).
+    rect(c, 18, 60, 22, 20, SKIND);
+    rect(c, 30, 48, 20, 14, SKIND);
+    blob(c, 52, 44, 11, 9, SKIN);
+    blob(c, 55, 42, 6, 5, '#a0745a');
     blob(c, 106, 68, 15, 13, SKIND);
     blob(c, 110, 64, 9, 8, SKIN);
   }
@@ -132,5 +135,12 @@ export function buildWeaponSprites(document) {
       (f === 1 ? out[id].fire : out[id].idle).push(toU32(data));
     }
   }
+  // fists: second fire frame = horizontal mirror (left/right parity swing)
+  const f0 = out[1].fire[0];
+  const fm = new Uint32Array(f0.length);
+  for (let y = 0; y < H2; y++) {
+    for (let x = 0; x < W2; x++) fm[y * W2 + x] = f0[y * W2 + (W2 - 1 - x)];
+  }
+  out[1].fire.push(fm);
   return out;
 }

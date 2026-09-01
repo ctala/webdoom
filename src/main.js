@@ -20,7 +20,7 @@ const game = new Game(makeTables(document), W, H, new Uint32Array(img.data.buffe
 if (new URLSearchParams(location.search).has('debug')) window.__wd = game;
 
 // Audio: sfx via game.sfx; context created/resumed on the first gesture.
-game.sfx = (n) => playSfx(n);
+game.sfx = (n, x, y) => playSfx(n, x, y, game.player);
 let audioUnlocked = false;
 function unlockAudio() {
   if (audioUnlocked) return;

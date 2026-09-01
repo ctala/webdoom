@@ -29,7 +29,7 @@ Procedencia: la BASE (v1.0.0, motor + 3 niveles + QA, 45.8h) la construyó
 - [x] **1.5. Dificultad con mobs + UX** → v1.2.0: mobMul (ITYTD ralea,
       NM duplica), cambio en YOU DIED (1-4/←/→), selector visible con `*`.
       Fix: `s.enraged` se reseteaba nunca (slot reuse).
-- [ ] **2. Game feel** → v1.3.0: screen shake, patada viewmodel, viñeta roja,
+- [x] **2. Game feel** → v1.3.0: ✅ screen shake, patada viewmodel, viñeta roja,
       audio posicional (StereoPanner desde `game.sound[]`), fix puños
       (backlog CHANGELOG:195)
 - [ ] **3. Luces dinámicas + gibs** → v1.4.0: pool ≤8 luces puntuales

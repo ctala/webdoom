@@ -90,7 +90,7 @@ export function useAction(game) {
   }
   if (game.doorH[hit.cell] < 1) {
     game.doorH[hit.cell] = 0.02; // start the open animation
-    game.sfx('door');
+    game.sfx('door', (hit.cell % game.map.gw) + 0.5, ((hit.cell / game.map.gw) | 0) + 0.5);
     if (hit.t === 4 && !game.secretCounted) {
       game.secretCounted = true;
       game.stats.secrets++;
