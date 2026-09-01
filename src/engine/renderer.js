@@ -14,7 +14,7 @@
 // floor/ceiling because walls are painted afterwards.
 
 import { castRay } from './raycaster.js';
-import { lightLevel, doorLight } from './light.js';
+import { lightLevel, doorLight, pointLightAdd } from './light.js';
 
 export class Renderer {
   /**
@@ -34,6 +34,7 @@ export class Renderer {
     this.ray = { perp: 0, side: 0, cellX: 0, cellY: 0, hitId: 0, texX: 0 };
     this.flash = 0;
     this.jy = 0; // screen-space horizon offset (shake), pixels
+    this.lights = null; // [{x,y,r,i}] up to 8 dynamic point lights (game.render)
     // radial vignette intensity per pixel (0 center .. 90 corners): used for
     // the low-HP / recent-damage red darkening pass.
     this.vig = new Uint8Array(W * H);
@@ -111,6 +112,18 @@ export class Renderer {
       const ut = ray.texX * 64; // continuous u (decal hit tests)
       let b = lightLevel(d, flash, ray.side === 1);
       if (id >= 8 && d < 6) b = doorLight(b); // closed doors read brighter than the walls around them
+      const lights = this.lights;
+      if (lights && lights.length) {
+        // dynamic pools (muzzle, plasma bolts): added at the exact hit point
+        const hx = px + rdx * ray.perp, hy = py + rdy * ray.perp;
+        for (let li = 0; li < lights.length; li++) {
+          const l = lights[li];
+          const ldx = hx - l.x, ldy = hy - l.y;
+          const ld = Math.sqrt(ldx * ldx + ldy * ldy);
+          b += pointLightAdd(ld, l.r, l.i) | 0;
+        }
+        if (b > 31) b = 31;
+      }
       const sideLvl = ray.side === 1 ? 32 : 0;
       const y0 = yTop < 0 ? 0 : yTop | 0;
       const y1 = yBot >= H ? H : (yBot | 0) + 1;

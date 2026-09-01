@@ -323,6 +323,14 @@ export class Game {
     this.renderer.jy = this.vJy;
     this.spriteR.jy = this.vJy;
     this.renderer.flash = p.flash;
+    // dynamic lights (<=8): muzzle flash decay + active plasma bolts
+    const L = this._lights || (this._lights = []);
+    L.length = 0;
+    if (p.flash > 0.25) L.push({ x: p.x, y: p.y, r: 6.5, i: p.flash * 12 });
+    this.projectiles.each((pr) => {
+      if (pr.active && pr.kind === 'plasma' && L.length < 8) L.push({ x: pr.x, y: pr.y, r: 4.0, i: 10 });
+    });
+    this.renderer.lights = this.state === 'PLAY' ? L : null;
     this.renderer.render(
       p.x, p.y, Math.cos(this.vAng), Math.sin(this.vAng),
       this.view, this.map, this.bg,

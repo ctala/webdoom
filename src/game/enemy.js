@@ -281,6 +281,10 @@ export function damageEnemy(game, e, dmg) {
   if (e.state === ST.DEATH || e.state === ST.CORPSE) return;
   e.hp -= dmg;
   e.justHurt = true;
+  if (e.hp <= 0 && dmg >= 35) {
+    // gib burst: heavy hits scatter more chunks than the normal death spray
+    game.spawnBlood(e.x, e.y, 24, ((e.x * 93 + e.y * 41) % 6.28), 7);
+  }
   if (e.type === 'boss' && !e.enraged && isEnraged(e)) {
     e.enraged = true;
     game.setMessage('THE WARDEN IS ENRAGED');

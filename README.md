@@ -100,7 +100,7 @@ llave piden el keycard ("RED/BLUE KEYCARD NEEDED").
 ## Testing y QA
 
 ```sh
-node --test                      # suite completa (158 tests)
+node --test                      # suite completa (161 tests)
 node tests/bench.js              # frame-time por escenario (budget 16.66 ms)
 node scripts/qa-browser.mjs      # sweep navegador: 48 posiciones x 8 direcciones
 CHROME_BIN=/ruta/a/chromium-headless node scripts/qa-playthrough.mjs

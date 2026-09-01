@@ -32,7 +32,7 @@ Procedencia: la BASE (v1.0.0, motor + 3 niveles + QA, 45.8h) la construyó
 - [x] **2. Game feel** → v1.3.0: ✅ screen shake, patada viewmodel, viñeta roja,
       audio posicional (StereoPanner desde `game.sound[]`), fix puños
       (backlog CHANGELOG:195)
-- [ ] **3. Luces dinámicas + gibs** → v1.4.0: pool ≤8 luces puntuales
+- [x] **3. Luces dinámicas + gibs** → v1.4.0: ✅ pool ≤8 luces puntuales
       (fogonazo/plasma/explosión) en el renderer; gibs al morir
 - [ ] **4. Cohete + ametralladora** → v1.5.0: proyectil con splash (daña al
       jugador cerca), chaingun con spread creciente; sprites + sonidos

@@ -25,6 +25,13 @@ export function lightLevel(d, flash = 0, sideDim = false) {
   return l;
 }
 
+/** Point-light contribution (quadratic falloff): brightness added per ray. */
+export function pointLightAdd(dist, radius, intensity) {
+  if (dist >= radius) return 0;
+  const t = 1 - dist / radius;
+  return intensity * t * t;
+}
+
 /** Closed doors are lit a bit brighter than the walls around them (clamped). */
 export function doorLight(l) {
   const v = l + 8;

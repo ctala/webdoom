@@ -447,3 +447,16 @@ sentía, recibir no se veía, y todo sonaba en el centro de la cabeza.
   pan L/R/dist, espejo de puños, paridad). Peor bench 3,030 ms/frame
   (viñeta permanente en el escenario de combate; budget 16,66). Sweep
   CLEAN y playthrough PASS (WON) con el shake activo en el boss fight.
+
+## v1.4.0 — [flash] Etapa F3: luces dinámicas + gibs
+- **Luces puntuales** (≤8 por frame, `renderer.lights`): el fog global ya
+  no manda solo. Por columna de pared se suma `pointLightAdd` (caída
+  cuadrática) evaluada en el punto exacto de impacto del rayo: el fogonazo
+  (flash×12, r 6.5) ilumina la habitación al disparar y cada bolt de plasma
+  viajando (r 4, i 10) pinta de verde las paredes cercanas. Coste: 8
+  hipotenusas por columna → bench casi plano (3,086 ms/frame).
+- **Gibs**: muerte con un golpe ≥35 dmg (plasma/escopeta a bocajarro/
+  futuro cohete) dispara 24 fragmentos extra con ángulo pseudo-random por
+  semilla de posición, sobre el spray normal del FSM.
+- Tests: **161** (+3: falloff puro, pool ≤8 cableado, umbral de gibs).
+  Sweep CLEAN, playthrough PASS (WON).
