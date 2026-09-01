@@ -26,19 +26,22 @@ Procedencia: la BASE (v1.0.0, motor + 3 niveles + QA, 45.8h) la construyó
         Nightmare (dmg recibido ×, cadencia enemiga ×, munición ×)
   - [x] Selección en el menú con ←/→ + persistencia (localStorage)
   - [x] Tests: falloff, multiplicadores de dificultad, Warden cierra distancia
-- [ ] **2. Game feel** → v1.2.0: screen shake, patada viewmodel, viñeta roja,
+- [x] **1.5. Dificultad con mobs + UX** → v1.2.0: mobMul (ITYTD ralea,
+      NM duplica), cambio en YOU DIED (1-4/←/→), selector visible con `*`.
+      Fix: `s.enraged` se reseteaba nunca (slot reuse).
+- [ ] **2. Game feel** → v1.3.0: screen shake, patada viewmodel, viñeta roja,
       audio posicional (StereoPanner desde `game.sound[]`), fix puños
       (backlog CHANGELOG:195)
-- [ ] **3. Luces dinámicas + gibs** → v1.3.0: pool ≤8 luces puntuales
+- [ ] **3. Luces dinámicas + gibs** → v1.4.0: pool ≤8 luces puntuales
       (fogonazo/plasma/explosión) en el renderer; gibs al morir
-- [ ] **4. Cohete + ametralladora** → v1.4.0: proyectil con splash (daña al
+- [ ] **4. Cohete + ametralladora** → v1.5.0: proyectil con splash (daña al
       jugador cerca), chaingun con spread creciente; sprites + sonidos
-- [ ] **5. Enemigos nuevos** → v1.5.0: Lost Soul (melee veloz), Baron (duro,
+- [ ] **5. Enemigos nuevos** → v1.6.0: Lost Soul (melee veloz), Baron (duro,
       doble bolt), Pain Elemental (spawn imps, respeta ENEMY_MAX=48)
-- [ ] **6. Items + E4M1/E5M1** → v1.6.0: berserk, megasphere, invisibilidad,
+- [ ] **6. Items + E4M1/E5M1** → v1.7.0: berserk, megasphere, invisibilidad,
       traje radiación + suelo de peligro; E4 hub multi-llave; E5 usa
       `heights` 2/3 + jefe final 2 fases
-- [ ] **7. Meta** → v1.7.0: guardado/continuar (localStorage), stats de nivel
+- [ ] **7. Meta** → v1.8.0: guardado/continuar (localStorage), stats de nivel
       (kills %/secrets %, `stats` ya existe), sliders FOV/sens/gamma
 - [ ] **8. Pitch (mirar arriba/abajo)** → v2.0.0: renderer + spriteRenderer +
       partículas. Riesgoso: último, 2-3 sesiones.

@@ -43,6 +43,9 @@ queda intacta y trazable: lo nuevo lleva prefijo `flash:` en git, tag
 - **v1.1.0** — Balance y dificultad: falloff de distancia en hitscan (ya
   no se mata al jefe de lejos con la pistola), THE WARDEN persigue (450→
   550 hp) y **4 dificultades** seleccionables en el título con ←/→.
+- **v1.2.0** — La dificultad también cambia la **cantidad de bichos**
+  (ITYTD ralea spawns; Nightmare duplica) y se puede cambiar tras morir
+  (teclas 1-4 o ←/→ en YOU DIED). Selector visible en el menú.
 
 ## Ejecutar
 
@@ -76,7 +79,7 @@ interfiere (solo expone un handle extra).
 | TAB (mantener)   | automapa                                  |
 | SHIFT            | correr                                    |
 | ENTER            | empezar / reintentar tras morir / saltar intermedio |
-| ← / → (menú)     | dificultad: ITYTD · Hurt Me Plenty · Ultra Violence · Nightmare |
+| ← / → o 1-4 (menú/muerte) | dificultad: ITYTD · Hurt Me Plenty · Ultra Violence · Nightmare |
 | ESC              | pausa (overlay PAUSED)                    |
 
 ## Niveles
@@ -97,7 +100,7 @@ llave piden el keycard ("RED/BLUE KEYCARD NEEDED").
 ## Testing y QA
 
 ```sh
-node --test                      # suite completa (151 tests)
+node --test                      # suite completa (152 tests)
 node tests/bench.js              # frame-time por escenario (budget 16.66 ms)
 node scripts/qa-browser.mjs      # sweep navegador: 48 posiciones x 8 direcciones
 CHROME_BIN=/ruta/a/chromium-headless node scripts/qa-playthrough.mjs
