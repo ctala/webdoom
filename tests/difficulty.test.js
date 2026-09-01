@@ -58,6 +58,28 @@ test('enemy attack cooldown scales with cdMul (Warden testbed)', () => {
   }
 });
 
+test('mobMul scales enemy count; boss never added or removed', () => {
+  const counts = [];
+  for (let d = 0; d < 4; d++) {
+    const g = makeGame();
+    setDifficulty(g, d);
+    g.loadLevel(2);
+    let boss = 0;
+    for (let i = 0; i < g.enemyCount; i++) {
+      const e = g.enemies[i];
+      if (e.type === 'boss') boss++;
+      assert.equal(g.map.solid[Math.floor(e.y) * g.map.gw + Math.floor(e.x)], 0,
+        DIFFS[d].name + ': spawned on open ground');
+    }
+    assert.equal(boss, 1, DIFFS[d].name + ': exactly one Warden');
+    counts.push(g.enemyCount);
+  }
+  // E3M1 map has 4 spawns: ITYTD drops every third non-boss, Nightmare adds twins
+  assert.equal(counts[1], 4, 'HMP = map count');
+  assert.ok(counts[0] < counts[1], `ITYTD thinner (${counts[0]})`);
+  assert.ok(counts[2] > counts[1] && counts[3] > counts[2], `more mobs when harder (${counts})`);
+});
+
 test('ammo pickups scale with ammoMul', () => {
   const g = makeGame();
   g.loadLevel(0);

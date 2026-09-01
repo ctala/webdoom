@@ -397,3 +397,25 @@ infinita) y el boss (range 11, speed 1.4) se quedaba kiteando inofensivo.
   hp 550. Bench peor caso **1,498 ms/frame** (budget 16,66). Sweep
   CLEAN. Playthrough PASS: el bot mata al Warden mejorado en 10,5 s con
   plasma pegado a él (tanqueando: ese es el plan — de cerca duele).
+
+## v1.2.0 — [flash] Etapa F1.5: dificultad con bichos, accesible al morir
+Feedback del jugador sobre v1.1.0: la dificultad no se veía cómo cambiar,
+no se podía tocar tras morir, y "dificultad" sin más bichos se queda en
+un multiplicador aburrido.
+
+- **Cantidad de mobs** (`mobMul` en `difficulty.js` + `setupEnemies`):
+  ITYTD elimina 1 de cada 3 spawns (el Warden NUNCA se elimina), HMP =
+  fiel al mapa, Ultra Violence duplica un 30 % junto al original (solo
+  en suelo libre), Nightmare 60 %. Verificado: los spawns caen en celda
+  no sólida.
+- **Cambio en pantalla de muerte**: ←/→ y teclas **1-4** también en
+  DEAD; ENTER reintenta ya con la nueva dificultad (`respawn` recorre
+  `setupEnemies`). El YOU DIED muestra la dificultad actual.
+- **Selector explícito en el menú**: nombre grande cian + fila
+  `*1 ITYTD  2 HMP  3 UV  4 NIGHTMARE` (marca `*` = glifo nuevo en la
+  fuente 5x7). En el menú, 1-4 eligen dificultad (las armas siguen en
+  1-4 durante el juego).
+- Fix de slot reuse: `s.enraged` se reseteaba nunca → el mensaje
+  "IS ENRAGED" podía perderse en reintentos del E3M1.
+- Tests: **152** (+1 mobMul). Bench peor 1,346 ms/frame. Sweep CLEAN,
+  playthrough PASS (WON).

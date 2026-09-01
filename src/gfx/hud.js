@@ -137,7 +137,9 @@ export function renderMenu(game) {
   blitCenter(buf, W, 'WEBDOOM', 58, 5, C_TITLE);
   if ((game.frame / 30 | 0) % 2 === 0) blitCenter(buf, W, 'PRESS ENTER TO START', 156, 2, C_SUB);
   const C_DIFF = (0xff << 24) | (0x3a << 16) | (0xd0 << 8) | 0xd0;
-  blitCenter(buf, W, 'DIFFICULTY: ' + DIFFS[game.diff | 0].name + ' - CHANGE WITH LEFT/RIGHT', 176, 1, C_DIFF);
+  const sel = game.diff | 0;
+  blitCenter(buf, W, DIFFS[sel].name, 170, 1, C_DIFF);
+  blitCenter(buf, W, DIFFS.map((d, i) => (i === sel ? '*' : ' ') + (i + 1) + ' ' + d.abbr).join('  '), 182, 1, C_SUB);
   blitCenter(buf, W, 'WASD MOVE - MOUSE LOOK - 1 2 3 4 WEAPONS - E USE', 212, 1, C_SUB);
   blitCenter(buf, W, 'TAB AUTOMAP - SHIFT RUN', 224, 1, C_SUB);
 }

@@ -31,18 +31,42 @@ export function isEnraged(e) {
 
 export function setupEnemies(game) {
   game.enemyCount = 0;
-  for (const e of game.map.ents) {
-    const def = ENEMY_DEF[e.type];
-    if (!def || game.enemyCount >= ENEMY_MAX) continue;
+  const { gw, solid } = game.map;
+  const spawn = (type, x, y) => {
+    const def = ENEMY_DEF[type];
+    if (!def || game.enemyCount >= ENEMY_MAX) return false;
     const s = game.enemies[game.enemyCount++];
-    s.type = e.type; s.x = e.x; s.y = e.y;
+    s.type = type; s.x = x; s.y = y;
     s.hp = def.hp; s.maxHp = def.hp;
-    s.state = ST.SLEEP; s.tState = ((e.x * 7 + e.y * 13) % 5) * 0.1;
+    s.state = ST.SLEEP; s.tState = ((x * 7 + y * 13) % 5) * 0.1;
     s.cd = 0.4; s.justHurt = false; s.heard = false;
     s.hasPath = false; s.pathI = 0; s.pathT = 0; s.stuck = 0;
     s.anim = 'idle'; s.animF = 0; s.animT = 0;
     s.deadT = 0; s.swing = 0; s.swingDone = false;
+    s.enraged = false; // slot reuse: never carry the enrage flag across levels/respawns
     s.path = (s.path && s.path.length >= 128) ? s.path : new Int16Array(128);
+    return true;
+  };
+  // mobMul: ITYTD drops every third spawn (boss exempt); UV/Nightmare add a
+  // twin beside originals that have open ground. The boss is sacred.
+  const ratio = diffOf(game).mobMul;
+  let kept = 0, idx = 0;
+  for (const e of game.map.ents) {
+    if (!ENEMY_DEF[e.type]) continue;
+    if (ratio < 1 && e.type !== 'boss' && idx++ % 3 === 2) continue;
+    if (spawn(e.type, e.x, e.y)) kept++;
+  }
+  if (ratio > 1) {
+    let extra = Math.round(kept * (ratio - 1));
+    for (const e of game.map.ents) {
+      if (extra <= 0) break;
+      if (!ENEMY_DEF[e.type] || e.type === 'boss') continue;
+      for (const [ox, oy] of [[0.45, 0], [-0.45, 0], [0, 0.45], [0, -0.45]]) {
+        const nx = e.x + ox, ny = e.y + oy;
+        if (solid[Math.floor(ny) * gw + Math.floor(nx)]) continue; // only open ground
+        if (spawn(e.type, nx, ny)) { extra--; break; }
+      }
+    }
   }
   game.stats.totalKills += game.enemyCount;
 }

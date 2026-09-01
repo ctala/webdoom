@@ -2,7 +2,7 @@
 // fixed 60Hz timestep with accumulator, render decoupled via rAF.
 
 import { Game } from './game/game.js';
-import { setDifficulty } from './game/difficulty.js';
+import { setDifficulty, DIFFS } from './game/difficulty.js';
 import { makeTables } from './gfx/textures.js';
 import { initAudio, playSfx } from './audio/sfx.js';
 import { startMusic } from './audio/music.js';
@@ -55,10 +55,16 @@ const KEYMAP = {
   Space: 'fire',
 };
 
+function pickDifficulty(i) {
+  setDifficulty(game, i);
+  try { localStorage.setItem('wd.diff', String(game.diff)); } catch (e) { /* private mode */ }
+}
+
 window.addEventListener('keydown', (e) => {
   unlockAudio();
   if (e.code >= 'Digit1' && e.code <= 'Digit4') {
-    game.switchWeapon(+e.code[5]);
+    if (game.state === 'MENU' || game.state === 'DEAD') pickDifficulty(+e.code[5] - 1);
+    else game.switchWeapon(+e.code[5]);
     return;
   }
   const k = KEYMAP[e.code];
@@ -139,9 +145,9 @@ let savedDiff = 1;
 try { savedDiff = (parseInt(localStorage.getItem('wd.diff'), 10) | 0); } catch (e) { /* private mode */ }
 setDifficulty(game, savedDiff);
 window.addEventListener('keydown', (e) => {
-  if (game.state !== 'MENU') return;
-  if (e.code === 'ArrowLeft') { setDifficulty(game, game.diff - 1); e.preventDefault(); }
-  else if (e.code === 'ArrowRight') { setDifficulty(game, game.diff + 1); e.preventDefault(); }
+  if (game.state !== 'MENU' && game.state !== 'DEAD') return;
+  if (e.code === 'ArrowLeft') { pickDifficulty(game.diff - 1); e.preventDefault(); }
+  else if (e.code === 'ArrowRight') { pickDifficulty(game.diff + 1); e.preventDefault(); }
 });
 
 window.addEventListener('keydown', (e) => {
@@ -183,7 +189,7 @@ function frame(now) {
     const inter = game.state === 'INTERM';
     const won = game.state === 'WON';
     msg.style.display = dead || paused || inter || won ? 'block' : 'none';
-    if (dead) msg.textContent = 'YOU DIED\npress ENTER to retry';
+    if (dead) msg.textContent = 'YOU DIED\npress ENTER to retry\nDIFFICULTY: ' + DIFFS[game.diff | 0].name + ' - CHANGE WITH 1-4';
     else if (won) msg.textContent = 'YOU ESCAPED\npress ENTER to play again';
     else if (inter) msg.textContent = game.levels[game.levelIdx].name + ' — COMPLETE\nnext: ' + game.levels[game.levelIdx + 1].name + '\n(ENTER to skip)';
     else if (paused) msg.textContent = 'PAUSED\npress ESC to continue';
