@@ -6,14 +6,17 @@
 
 import { castRay, hasLOS } from '../engine/raycaster.js';
 import { ST } from '../engine/fsm.js';
+import { damageFalloff } from '../engine/light.js';
 import { damageEnemy } from './enemy.js';
 import { nextRand, spawnBlood } from './particles.js';
 
+// range = effective range for hitscan falloff (damageFalloff -> 30% beyond);
+// projectiles (plasma) keep full damage at any distance they can reach.
 export const WEAPON_DEF = {
   1: { name: 'FISTS', cd: 0.42, melee: true, dmgMin: 12, dmgMax: 26, range: 1.3, cone: 0.55, ammo: null },
-  2: { name: 'PISTOL', cd: 0.45, hitscan: true, pellets: 1, dmgMin: 10, dmgMax: 30, spread: 0.014, ammo: 'ammoP' },
-  3: { name: 'SHOTGUN', cd: 0.95, hitscan: true, pellets: 8, dmgMin: 3, dmgMax: 9, spread: 0.06, ammo: 'ammoS' },
-  4: { name: 'PLASMA', cd: 0.30, projectile: true, pellets: 1, dmgMin: 16, dmgMax: 24, spread: 0.02, speed: 9.0, life: 1.8, splash: 1.6, splashDmg: 8, ammo: 'ammoPl' },
+  2: { name: 'PISTOL', cd: 0.45, hitscan: true, pellets: 1, dmgMin: 8, dmgMax: 16, spread: 0.014, range: 11, ammo: 'ammoP' },
+  3: { name: 'SHOTGUN', cd: 0.95, hitscan: true, pellets: 8, dmgMin: 3, dmgMax: 9, spread: 0.06, range: 7, ammo: 'ammoS' },
+  4: { name: 'PLASMA', cd: 0.30, projectile: true, pellets: 1, dmgMin: 16, dmgMax: 24, spread: 0.02, speed: 9.0, life: 1.5, splash: 1.6, splashDmg: 8, ammo: 'ammoPl' },
 };
 
 export const WEAPON_IDS = [1, 2, 3, 4];
@@ -109,7 +112,8 @@ function hitscan(game, def, gw, gh) {
     if (perp < game.enemyDef[e.type].r + 0.14) { best = e; bestT = t; }
   }
   if (best) {
-    damageEnemy(game, best, dmgRoll(game, def));
+    const dmg = Math.max(1, Math.round(dmgRoll(game, def) * damageFalloff(bestT, def.range)));
+    damageEnemy(game, best, dmg);
     spawnBlood(game, best.x, best.y, def.pellets > 1 ? 9 : 5, a, def.pellets > 1 ? 4.5 : 3.5);
     game.emitSound(best.x, best.y, 2.5);
     game.sfx('hit');

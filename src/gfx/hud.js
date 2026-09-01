@@ -5,6 +5,7 @@
 import { blit, blitCenter } from './font5x7.js';
 import { scanUse } from '../game/interact.js';
 import { currentObjective, compassInfo } from '../game/objective.js';
+import { DIFFS } from '../game/difficulty.js';
 
 // Packed colors (0xAABBGGRR)
 const C_BG = (0xff << 24) | (0x14 << 16) | (0x14 << 8) | 0x14; // near-black strip
@@ -135,6 +136,8 @@ export function renderMenu(game) {
   const C_SUB = (0xff << 24) | (0x88 << 16) | (0x88 << 8) | 0x88;
   blitCenter(buf, W, 'WEBDOOM', 58, 5, C_TITLE);
   if ((game.frame / 30 | 0) % 2 === 0) blitCenter(buf, W, 'PRESS ENTER TO START', 156, 2, C_SUB);
+  const C_DIFF = (0xff << 24) | (0x3a << 16) | (0xd0 << 8) | 0xd0;
+  blitCenter(buf, W, 'DIFFICULTY: ' + DIFFS[game.diff | 0].name + ' - CHANGE WITH LEFT/RIGHT', 176, 1, C_DIFF);
   blitCenter(buf, W, 'WASD MOVE - MOUSE LOOK - 1 2 3 4 WEAPONS - E USE', 212, 1, C_SUB);
   blitCenter(buf, W, 'TAB AUTOMAP - SHIFT RUN', 224, 1, C_SUB);
 }

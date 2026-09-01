@@ -55,7 +55,7 @@ test('pistol hitscan damages the aligned enemy; kill counts', () => {
   assert.equal(e.x, 10.5);
   const hp0 = e.hp;
   let kills = 0;
-  for (let s = 0; s < 8 && kills === 0; s++) {
+  for (let s = 0; s < 24 && kills === 0; s++) {
     shot(g);
     if (e.hp <= 0 || e.state === ST.DEATH || e.state === ST.CORPSE) kills = 1;
   }
@@ -63,6 +63,22 @@ test('pistol hitscan damages the aligned enemy; kill counts', () => {
   assert.equal(kills, 1, 'enemy eventually dies to pistol');
   assert.equal(g.stats.kills, 1);
   assert.ok(g.player.ammoP < 50, 'ammoP consumed');
+});
+
+test('hitscan falloff: pistol at 9u does a fraction of its close-range damage', () => {
+  const g = makeGame(ROOM);
+  const e = g.enemies[0];
+  e.hp = 1e9;
+  const fireOne = (x) => {
+    e.x = x; e.y = 3.5; e.state = ST.SLEEP; e.cd = 9; // pin the imp so only distance varies
+    g.player.wpnCd = 0; g.input.fire = true; g.tick(1 / 60); g.input.fire = false;
+  };
+  let far = 0;
+  for (let k = 0; k < 10; k++) { const h = e.hp; fireOne(10.5); far += h - e.hp; }
+  let near = 0;
+  for (let k = 0; k < 10; k++) { const h = e.hp; fireOne(3.0); near += h - e.hp; } // dist 1.5
+  assert.ok(far < near / 2, `falloff halves damage at 9u (far ${far} vs near ${near})`);
+  assert.ok(far <= 70 && near >= 80, `ranges sane (far ${far} in <=7/shot, near ${near} >=8/shot)`);
 });
 
 test('pistol cooldown: holding fire does not double-shoot', () => {

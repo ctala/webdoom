@@ -33,6 +33,17 @@ Números de cabecera (detalle y fuentes en `EXPERIMENTS.md`):
   jugando); el grave: el pool de proyectiles nunca reciclaba y tras ~32
   tiros las balas dejaban de existir en silencio.
 
+## Mejoras post-base
+
+Desde v1.0.1 la continuidad del experimento la construye otro modelo:
+**Qwen 3.8 Flash Next** (NVFP4 vía vLLM). La base (v1.0.0, etapas 1–8)
+queda intacta y trazable: lo nuevo lleva prefijo `flash:` en git, tag
+`[flash]` en `CHANGELOG.md` y roadmap en `TODO.md`.
+
+- **v1.1.0** — Balance y dificultad: falloff de distancia en hitscan (ya
+  no se mata al jefe de lejos con la pistola), THE WARDEN persigue (450→
+  550 hp) y **4 dificultades** seleccionables en el título con ←/→.
+
 ## Ejecutar
 
 ```sh
@@ -65,6 +76,7 @@ interfiere (solo expone un handle extra).
 | TAB (mantener)   | automapa                                  |
 | SHIFT            | correr                                    |
 | ENTER            | empezar / reintentar tras morir / saltar intermedio |
+| ← / → (menú)     | dificultad: ITYTD · Hurt Me Plenty · Ultra Violence · Nightmare |
 | ESC              | pausa (overlay PAUSED)                    |
 
 ## Niveles
@@ -85,7 +97,7 @@ llave piden el keycard ("RED/BLUE KEYCARD NEEDED").
 ## Testing y QA
 
 ```sh
-node --test                      # suite completa (144 tests)
+node --test                      # suite completa (151 tests)
 node tests/bench.js              # frame-time por escenario (budget 16.66 ms)
 node scripts/qa-browser.mjs      # sweep navegador: 48 posiciones x 8 direcciones
 CHROME_BIN=/ruta/a/chromium-headless node scripts/qa-playthrough.mjs
@@ -112,8 +124,10 @@ src/gfx/              texturas procedurales + tablas de sombreado, sprites
                       sprites de salida (arco + placa EXIT)
 src/audio/            sfx sintéticos + música generativa (WebAudio)
 src/game/             game.js (orquestador, <400 líneas), player, enemigos
-                      (incl. THE WARDEN: ráfaga 3 bolts, enfurece a <45% hp),
-                      armas, projectiles, partículas, ítems, interacción
+                      (incl. THE WARDEN: ráfaga 3 bolts, enfurece a <45% hp,
+                      press: cierra a 5u), armas (fallo de distancia hitscan),
+                      difficulty.js (ITYTD→Nightmare, menú ←/→), projectiles,
+                      partículas, ítems, interacción
                       (puertas/salida/gate de jefe), objective.js (objetivo
                       compartido por HUD+automapa+QA), automapa
 levels/               e1m1.js, e2m1.js, e3m1.js (ASCII 32x24)

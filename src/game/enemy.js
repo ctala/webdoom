@@ -6,6 +6,7 @@
 import { hasLOS } from '../engine/raycaster.js';
 import { moveCircle } from '../engine/collision.js';
 import { enemyNextState, ST } from '../engine/fsm.js';
+import { diffOf } from './difficulty.js';
 
 export const ENEMY_MAX = 48;
 const _mv = new Float64Array(2);
@@ -17,8 +18,9 @@ export const ENEMY_DEF = {
   commander: { hp: 70, speed: 2.1, range: 9.0, kind: 'hitscan', pellets: 3, dmg: 21, cd: 1.5, r: 0.3, viewH: 0.95 },
   caco:      { hp: 95, speed: 1.7, range: 9.0, kind: 'ranged', pKind: 'bolt', dmg: 20, cd: 1.4, r: 0.32, viewH: 1.05, lift: 0.35 },
   // THE WARDEN (E3M1): hovers, 3-way bolt spray; below 45% hp it enrages
-  // (faster attack, +50% bolt damage).
-  boss:      { hp: 450, speed: 1.4, range: 11.0, kind: 'ranged', pKind: 'bolt', dmg: 24, cd: 1.7, r: 0.45, viewH: 1.4, lift: 0.5, spread: 3 },
+  // (faster attack, +50% bolt damage). press: closes to 5u instead of kiting
+  // at its max range — kills the "snipe it safely from 11u" strat.
+  boss:      { hp: 550, speed: 1.4, range: 8.0, kind: 'ranged', pKind: 'bolt', dmg: 24, cd: 1.7, r: 0.45, viewH: 1.4, lift: 0.5, spread: 3, press: 5.0 },
 };
 const SIGHT = 13.5;
 
@@ -185,8 +187,11 @@ export function updateEnemies(game, dt) {
       case ST.ATTACK: {
         e.animT += dt;
         if (def.kind === 'ranged') {
+            if (def.press && dist > def.press && sees) {
+              stepEnemy(e, def, dx, dy, dist, dt * (isEnraged(e) ? 1.3 : 1), view, game.map);
+            }
             if (e.cd <= 0 && sees) {
-              e.cd = def.cd * (isEnraged(e) ? 0.55 : 1); e.anim = 'atk'; e.animT = 0;
+              e.cd = def.cd * diffOf(game).cdMul * (isEnraged(e) ? 0.55 : 1); e.anim = 'atk'; e.animT = 0;
               fireEnemyProjectile(game, e);
               game.emitSound(e.x, e.y, 3);
               game.sfx('eshoot');
@@ -195,7 +200,7 @@ export function updateEnemies(game, dt) {
         } else if (def.kind === 'melee') {
           if (dist > def.range * 0.85 && sees) stepEnemy(e, def, dx, dy, dist, dt, view, game.map);
           if (e.cd <= 0) {
-            e.cd = def.cd; e.anim = 'atk'; e.animT = 0;
+            e.cd = def.cd * diffOf(game).cdMul; e.anim = 'atk'; e.animT = 0;
             e.swing = 0.35; e.swingDone = false;
             game.emitSound(e.x, e.y, 3);
           }
@@ -212,7 +217,7 @@ export function updateEnemies(game, dt) {
           if (e.anim === 'atk' && e.animT > 0.4) e.anim = 'idle';
         } else { // hitscan burst
           if (e.cd <= 0 && sees && dist <= def.range) {
-            e.cd = def.cd; e.anim = 'atk'; e.animT = 0;
+            e.cd = def.cd * diffOf(game).cdMul; e.anim = 'atk'; e.animT = 0;
             game.hurtPlayer(def.dmg, e.x, e.y);
             game.emitSound(e.x, e.y, 4.5);
           } else if (e.anim !== 'atk') e.anim = 'idle';

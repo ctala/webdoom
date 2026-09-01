@@ -56,10 +56,22 @@ test('boss is spawned by loadLevel with the big HP pool', () => {
   g.loadLevel(2);
   const e = g.enemies.find((x) => x.type === 'boss');
   assert.ok(e, 'boss in the pool');
-  assert.equal(e.hp, 450);
-  assert.ok(e.maxHp === 450);
+  assert.equal(e.hp, 550);
+  assert.ok(e.maxHp === 550);
   g.loadLevel(0);
   assert.equal(g.enemies.some((x) => x.type === 'boss'), false, 'no boss in E1M1');
+});
+
+test('THE WARDEN closes the distance (press) instead of kiting at max range', () => {
+  const g = makeGame();
+  g.loadLevel(2);
+  const e = g.enemies.find((x) => x.type === 'boss');
+  e.x = 17.5; e.y = 12.5; // arena open ground
+  g.player.x = 11.0; g.player.y = 12.5; // dist 6.5 > press 5
+  e.state = ST.ATTACK; e.cd = 99; // force attack state, skip firing
+  const x0 = e.x;
+  for (let i = 0; i < 60; i++) updateEnemies(g, 1 / 60);
+  assert.ok(e.x < x0 - 0.5, `warden advanced toward the player (${x0} -> ${e.x})`);
 });
 
 test('THE WARDEN fires a 3-bolt spread', () => {

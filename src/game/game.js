@@ -23,6 +23,7 @@ import { makeItems, setupItems, updateItems, renderItems } from './items.js';
 import { initDoors, updateDoors, useAction, updateIntermission } from './interact.js';
 import { renderHud, renderMenu, renderReticle } from '../gfx/hud.js';
 import { renderAutomap } from './automap.js';
+import { diffOf } from './difficulty.js';
 import { E1M1 } from '../../levels/e1m1.js';
 import { E2M1 } from '../../levels/e2m1.js';
 import { E3M1 } from '../../levels/e3m1.js';
@@ -68,6 +69,7 @@ export class Game {
     this.soundLen = 0;
     this.levelIdx = 0;
     this.levels = [E1M1, E2M1, E3M1];
+    this.diff = 1; // 0 ITYTD, 1 HMP, 2 UV, 3 Nightmare (difficulty.js; menu selects)
     this.message = { text: '', t: 0 };
     this.stats = { kills: 0, totalKills: 0, secrets: 0, totalSecrets: 0, time: 0, levelTime: 0 };
     this.input = { up: false, down: false, left: false, right: false, run: false, fire: false, use: false, map: false };
@@ -243,7 +245,7 @@ export class Game {
     const p = this.player;
     if (this.state !== 'PLAY') return;
     const dist = Math.hypot(p.x - sx, p.y - sy);
-    let d = Math.round(dmg * damageFalloff(dist, 10));
+    let d = Math.round(dmg * damageFalloff(dist, 10) * diffOf(this).dmgTaken);
     if (p.armor > 0) {
       const absorbed = Math.min(p.armor, Math.round(d * 0.7));
       p.armor -= absorbed;

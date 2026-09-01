@@ -100,3 +100,22 @@ Reproducción:
 curl -s localhost:8001/metrics | grep -E "vllm:(prompt|generation|time_to_first_token|spec_decode)_.*"
 docker logs qwen38-nvfp4-8001 | grep "loggers.py:310"   # serie 10s para integrar
 ```
+
+## Run 2 — post-base con Qwen 3.8 Flash Next (NVFP4 vía vLLM)
+
+Desde v1.0.1 las mejoras las construye **Qwen 3.8 Flash Next** (mismo
+harness y protocolo de QA; la base 27B queda intacta en v1.0.0). Trazas:
+commits `flash:` + tags `v1.x` (base = `v1.0.0`).
+
+Pendiente de completar al cerrar cada sesión, desde LiteLLM/vLLM
+(`curl -s localhost:8001/metrics`, ventana = commits `flash:`):
+
+| métrica | valor | fuente |
+|---|---|---|
+| requests | pend | `vllm:num_requests_total` delta |
+| prompt tokens enviados / prefilled | pend | métricas + prefix-cache hit rate |
+| generation tokens | pend | `vllm:generation_tokens_total` delta |
+| tok/s ocupado / TTFT | pend | serie 10 s + TTFT histogram |
+
+Sesiones: **F1 v1.1.0** (balance + dificultad): 7 ficheros tocados,
++7 tests (151), bench/sweep/playthrough verdes en el mismo commit.

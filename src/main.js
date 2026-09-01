@@ -2,6 +2,7 @@
 // fixed 60Hz timestep with accumulator, render decoupled via rAF.
 
 import { Game } from './game/game.js';
+import { setDifficulty } from './game/difficulty.js';
 import { makeTables } from './gfx/textures.js';
 import { initAudio, playSfx } from './audio/sfx.js';
 import { startMusic } from './audio/music.js';
@@ -133,9 +134,23 @@ window.addEventListener('blur', () => {
 
 // ---------------- death / respawn / won (full HUD + menus arrive in stage 6) --
 const msg = document.getElementById('msg');
+// difficulty: cycle with LEFT/RIGHT on the title menu; persisted default
+let savedDiff = 1;
+try { savedDiff = (parseInt(localStorage.getItem('wd.diff'), 10) | 0); } catch (e) { /* private mode */ }
+setDifficulty(game, savedDiff);
+window.addEventListener('keydown', (e) => {
+  if (game.state !== 'MENU') return;
+  if (e.code === 'ArrowLeft') { setDifficulty(game, game.diff - 1); e.preventDefault(); }
+  else if (e.code === 'ArrowRight') { setDifficulty(game, game.diff + 1); e.preventDefault(); }
+});
+
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Enter' || e.code === 'NumpadEnter') {
-    if (game.state === 'MENU') { unlockAudio(); tryLock(); game.loadLevel(0); }
+    if (game.state === 'MENU') {
+      unlockAudio(); tryLock();
+      try { localStorage.setItem('wd.diff', String(game.diff)); } catch (e2) { /* private mode */ }
+      game.loadLevel(0);
+    }
     else if (game.state === 'DEAD') game.respawn();
     else if (game.state === 'WON') game.loadLevel(0);
     else if (game.state === 'INTERM') game.intermT = 0; // skip the intermission

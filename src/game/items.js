@@ -3,6 +3,7 @@
 
 import { camDepth } from '../engine/proj.js';
 import { lightLevel } from '../engine/light.js';
+import { diffOf } from './difficulty.js';
 
 /** Draw active items into the sprite pass (call before sr.render). */
 export function renderItems(game, sr, p, cosA, sinA) {
@@ -70,8 +71,9 @@ export function updateItems(game) {
       else p.armor = Math.min(100, p.armor + d.armor);
     } else if (d.ammo) {
       const stat = d.ammo[0];
+      const amt = Math.max(1, Math.round(d.ammo[1] * diffOf(game).ammoMul));
       if (p[stat] >= d.cap) take = false;
-      else p[stat] = Math.min(d.cap, p[stat] + d.ammo[1]);
+      else p[stat] = Math.min(d.cap, p[stat] + amt);
     } else if (d.key) {
       if (p[d.key]) take = false;
       else p[d.key] = true;

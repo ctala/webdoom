@@ -4,6 +4,17 @@ Frame times are CPU-only measurements from `node tests/bench.js` (V8, 480x270,
 600-frame average). The 60fps budget is 16.66 ms/frame; browser GPU cost on top
 is one `putImageData(480x270)` + a handful of 2D calls.
 
+## Versionado y procedencia
+
+- **Semver** en `package.json`. **v1.0.0 = base**: todo el histórico
+  Stage 1–8 fue construido con **Qwen3.8 27B** (NVFP4 vía vLLM).
+- Las mejoras post-base las construye **Qwen 3.8 Flash Next** (NVFP4 vía
+  vLLM): commits con prefijo `flash:`, secciones `[flash]` en este
+  CHANGELOG. Las secciones `Stage N` sin tag son la base 27B.
+- Regla: mecánica/arma/nivel nuevo → minor (`1.x.0`); balance/fix →
+  patch (`1.x.y`); cambio de motor (pitch) → `2.0.0`.
+- Hoja de ruta y estado: `TODO.md`. Métricas por run: `EXPERIMENTS.md`.
+
 ## Stage 1 — Loop fijo + raycaster de paredes sólidas (DDA)
 - Loop de rAF con timestep fijo 60Hz (accumulator pattern, spiral-of-death guard).
 - Raycaster DDA sobre grid con proyección de plano de cámara (corrección de
@@ -355,3 +366,34 @@ de salida/pool). Bench stage7 (foso: Warden + escoltas + plasma + HUD):
   (93.5 %), DSpark k=14 con 1.70 tokens aceptados/paso (542.6 K aceptados
   en 318.9 K pasos), 0 preemptions. Benchmark del modelo:
   <https://benchmarks.cristiantala.com/modelo/qwen-3.8-27b/>.
+
+## v1.0.1 — [flash] Procedencia y estándar de versionado (doc)
+- README: "Origen" (base = Qwen3.8 27B) + sección nueva "Mejoras
+  post-base" (Qwen 3.8 Flash Next, NVFP4 vía vLLM).
+- Sección de versionado arriba + `TODO.md` (hoja de ruta v1.1 → v2.0 con
+  verificación por etapa) + run 2 en `EXPERIMENTS.md` (pendientes los
+  tokens del run Flash Next, a completar desde LiteLLM/vLLM al cerrar).
+
+## v1.1.0 — [flash] Etapa F1: balance + dificultad
+Bug de diseño reportado jugando: **el Warden se moría de lejos con la
+pistola** — los hitscan no tenían atenuación (10–30 dmg a distancia
+infinita) y el boss (range 11, speed 1.4) se quedaba kiteando inofensivo.
+
+- **Fallo de distancia en hitscan** (`weapons.js`): reutiliza
+  `damageFalloff` del motor (suelo 30 % más allá del rango). Rangos
+  efectivos nuevos: pistola 11u, escopeta 7u. Plasma es proyectil y no
+  falla, pero vida 1.8→1.5 s (alcance 16.2→13.5u).
+- **Pistola nerf**: 10–30 → 8–16 dmg. Escopeta y puños intactos.
+- **THE WARDEN**: 450→**550 hp**, `range` 11→8 y **`press: 5.0`** — en
+  ATTACK avanza hasta ~5u (×1.3 speed si está enfurecido): cuerpo a
+  cuerpo con su spray de 3 bolts o nada. Ya no es un sacacorchones.
+- **Dificultad** (`src/game/difficulty.js`): ITYTD (daño recibido ×0.5,
+  cadencia enemiga ×1.4, munición ×0.7) · **Hurt Me Plenty** (default) ·
+  Ultra Violence (×1.5, ×0.8) · Nightmare (×2, ×0.65). Se elige en el
+  título con ←/→ y persiste en `localStorage` (`wd.diff`).
+- Menú: línea cian "DIFFICULTY: ..." (`hud.js`).
+- Tests: **151** (+7: falloff, dmgTaken, cdMul, ammoMul, wrap, Warden
+  cierra distancia). Ajustados: kill-pistol 8→24 disparos (nerf), boss
+  hp 550. Bench peor caso **1,498 ms/frame** (budget 16,66). Sweep
+  CLEAN. Playthrough PASS: el bot mata al Warden mejorado en 10,5 s con
+  plasma pegado a él (tanqueando: ese es el plan — de cerca duele).
