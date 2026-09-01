@@ -45,6 +45,14 @@ function paintAmmoS(c) {
   for (let i = 0; i < 3; i++) { c.fillRect(10 + i * 4.6, 29.2, 3, 0.8); } // brass base
 }
 
+function paintAmmoR(c) {
+  c.fillStyle = '#6a3a28'; c.fillRect(9, 18, 14, 13); // wooden crate
+  c.fillStyle = '#8a5236'; c.fillRect(9, 18, 14, 2);
+  c.fillStyle = '#c8c0b0'; c.fillRect(12, 20, 8, 8); // shell box
+  c.fillStyle = '#d8b040'; c.fillRect(13, 21, 6, 3); // primer band
+  c.fillStyle = '#30343a'; c.fillRect(14, 24, 4, 4); // fin block
+}
+
 function paintAmmoPl(c) {
   c.fillStyle = '#5a6a7a'; c.fillRect(12, 19, 8, 12);
   c.fillStyle = '#7c8c9c'; c.fillRect(12, 19, 8, 2);
@@ -105,6 +113,7 @@ const PAINT = {
   ammoP: paintAmmoP,
   ammoS: paintAmmoS,
   ammoPl: paintAmmoPl,
+  ammoR: paintAmmoR,
   keyR: (c) => paintKey(c, '#c84030', '#7a2018'),
   keyB: (c) => paintKey(c, '#3860c8', '#1c3a7a'),
   exit: paintExit,

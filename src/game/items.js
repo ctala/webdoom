@@ -25,6 +25,7 @@ export const ITEM_DEF = {
   ammoP: { name: '+PISTOL AMMO', viewH: 0.30, ammo: ['ammoP', 10], cap: 200 },
   ammoS: { name: '+SHELLS', viewH: 0.30, ammo: ['ammoS', 4], cap: 50 },
   ammoPl: { name: '+PLASMA CELLS', viewH: 0.34, ammo: ['ammoPl', 10], cap: 100 },
+  ammoR: { name: '+ROCKET AMMO', viewH: 0.32, ammo: ['ammoR', 6], cap: 100 },
   keyR: { name: 'GOT THE RED KEYCARD', viewH: 0.42, lift: 0.16, key: 'keyR' },
   keyB: { name: 'GOT THE BLUE KEYCARD', viewH: 0.42, lift: 0.16, key: 'keyB' },
 };

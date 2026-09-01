@@ -62,9 +62,10 @@ function pickDifficulty(i) {
 
 window.addEventListener('keydown', (e) => {
   unlockAudio();
-  if (e.code >= 'Digit1' && e.code <= 'Digit4') {
-    if (game.state === 'MENU' || game.state === 'DEAD') pickDifficulty(+e.code[5] - 1);
-    else game.switchWeapon(+e.code[5]);
+  if (e.code >= 'Digit1' && e.code <= 'Digit6') {
+    const n = +e.code[5];
+    if ((game.state === 'MENU' || game.state === 'DEAD') && n <= 4) pickDifficulty(n - 1);
+    else if (game.state === 'PLAY') game.switchWeapon(n);
     return;
   }
   const k = KEYMAP[e.code];
@@ -74,8 +75,9 @@ window.addEventListener('keydown', (e) => {
 });
 window.addEventListener('pointerdown', unlockAudio);
 window.addEventListener('wheel', (e) => {
+  if (game.state !== 'PLAY') return;
   const p = game.player;
-  const n = (((p.weapon - 1 + (e.deltaY > 0 ? 1 : -1)) % 4) + 4) % 4 + 1;
+  const n = (((p.weapon - 1 + (e.deltaY > 0 ? 1 : -1)) % 6) + 6) % 6 + 1;
   game.switchWeapon(n);
 }, { passive: true });
 window.addEventListener('keyup', (e) => {

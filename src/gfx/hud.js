@@ -6,6 +6,7 @@ import { blit, blitCenter } from './font5x7.js';
 import { scanUse } from '../game/interact.js';
 import { currentObjective, compassInfo } from '../game/objective.js';
 import { DIFFS } from '../game/difficulty.js';
+import { WEAPON_DEF } from '../game/weapons.js';
 
 // Packed colors (0xAABBGGRR)
 const C_BG = (0xff << 24) | (0x14 << 16) | (0x14 << 8) | 0x14; // near-black strip
@@ -19,7 +20,7 @@ const C_RET = (0xff << 24) | (0x20 << 16) | (0xff << 8) | 0x50; // reticle green
 const C_KEYR = (0xff << 24) | (0x30 << 16) | (0x40 << 8) | 0xc8;
 const C_KEYB = (0xff << 24) | (0xc8 << 16) | (0x60 << 8) | 0x38;
 
-const WEAPON_NAME = { 1: 'FISTS', 2: 'PISTOL', 3: 'SHOTGUN', 4: 'PLASMA' };
+const WEAPON_NAME = { 1: 'FISTS', 2: 'PISTOL', 3: 'SHOTGUN', 4: 'PLASMA', 5: 'CHAINGUN', 6: 'ROCKET' };
 
 /**
  * 8x8 marine face, hurt 0..4 (0 fresh, 4 near death), dir -1/0/1 eye shift.
@@ -81,9 +82,10 @@ export function renderHud(game) {
   // hp (green), 2-3 digits
   blit(buf, W, String(p.hp), 34, TOP + 6, 2, C_HP);
   // weapon name (gray) + ammo (yellow)
-  const name = WEAPON_NAME[p.weapon] || '';
+  const name = (WEAPON_DEF[p.weapon] || {}).name || '';
   blit(buf, W, name, 132, TOP + 6, 2, C_NAME);
-  const ammo = p.weapon === 1 ? '-' : p.weapon === 2 ? String(p.ammoP) : p.weapon === 3 ? String(p.ammoS) : String(p.ammoPl);
+  const wslot = WEAPON_DEF[p.weapon] ? WEAPON_DEF[p.weapon].ammo : null;
+  const ammo = wslot ? String(p[wslot]) : '-';
   blit(buf, W, ammo, 132 + name.length * 12 + 10, TOP + 6, 2, C_AMMO);
   // armor (yellow)
   blit(buf, W, String(p.armor), 356, TOP + 6, 2, C_AMMO);

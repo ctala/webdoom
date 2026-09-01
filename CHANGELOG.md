@@ -460,3 +460,26 @@ sentía, recibir no se veía, y todo sonaba en el centro de la cabeza.
   semilla de posición, sobre el spray normal del FSM.
 - Tests: **161** (+3: falloff puro, pool ≤8 cableado, umbral de gibs).
   Sweep CLEAN, playthrough PASS (WON).
+
+## v1.5.0 — [flash] Etapa F4: lanzacohetes + ametralladora
+- **AMETRALLADORA (5)**: hitscan 6–12 dmg, cadencia 0.10 s, comparte balas
+  con la pistola; el cono se abre mientras mantienes el dedo (ramp
+  `spreadRamp` ×3.5, se resetea al soltar) — el spray tiene su riesgo.
+- **LANZACOHETES (6)**: proyectil lento (7.5u/s) con estela (glow más
+  grande + luz dinámica r 4.5) y splash de **60** en 2.4u; la onda daña
+  también al tirador a bocajarro (sin rocket-jump, con la self-damage sí).
+  Explosión = sfx `boom` + decal quemado + sangre a los enemigos en radio.
+- Munición nueva: cajas `r` (ITEM_DEF ammoR, icono cajón con cohetes);
+  una en **E2M1** (la armería, coherente).
+- Teclas **5/6** y la rueda recorre las 6 armas. HUD: nombre y munición
+  genéricos desde `WEAPON_DEF` (ya no hay switch de armas a mano).
+- Fallback de munición ahora es estilo Doom: avanza por la lista a la
+  siguiente arma con balas; puños solo al final (el test viejo asumía la
+  cadena antigua y se actualizó a la semántica nueva).
+- **mobMul esparcido (feedback del jugador)**: los extras de UV/Nightmare
+  ya NO son gemelos pegados al original — se reparten por suelo libre del
+  mapa, a >5u del spawn del jugador y a ≥2.5u de otros bichos, rotando
+  tipos. El mapa se siente más poblado, no la misma sala duplicada.
+- Tests: **166** (+5 guns: burst/ramp, splash+self-damage, kill por splash,
+  fallback Doom, defs 6 armas; test mobMul ahora exige dispersión real).
+  Bench peor 3,1 ms/frame. Sweep CLEAN, playthrough PASS (WON).

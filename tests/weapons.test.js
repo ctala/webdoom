@@ -92,18 +92,18 @@ test('pistol cooldown: holding fire does not double-shoot', () => {
   assert.equal(g.player.ammoP, ammo0 - 1, 'one shot per cooldown window');
 });
 
-test('out of ammo auto-falls back (pistol -> fists, shotgun -> pistol)', () => {
+test('out of ammo: Doom-style advance to the next weapon with ammo', () => {
   const g = makeGame(ROOM);
   const p = g.player;
-  p.weapon = 2; p.ammoP = 0;
+  p.weapon = 2; p.ammoP = 0; p.ammoS = 0; p.ammoPl = 0; p.ammoR = 0;
   g.input.fire = true; g.tick(1 / 60); g.input.fire = false;
-  assert.equal(p.weapon, 1, 'fell back to fists');
+  assert.equal(p.weapon, 1, 'nothing left -> fists');
   assert.ok(/OUT OF AMMO/.test(g.message.text));
   const g2 = makeGame(ROOM);
   const p2 = g2.player;
-  p2.weapon = 3; p2.ammoS = 0; p2.ammoP = 12;
+  p2.weapon = 3; p2.ammoS = 0; p2.ammoP = 12; p2.ammoPl = 0; p2.ammoR = 0;
   g2.input.fire = true; g2.tick(1 / 60); g2.input.fire = false;
-  assert.equal(p2.weapon, 2, 'shotgun fell back to pistol');
+  assert.equal(p2.weapon, 5, 'shotgun -> next with ammo = chaingun (bullets)');
 });
 
 test('fists: hits inside range+cone, misses outside', () => {

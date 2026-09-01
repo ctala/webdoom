@@ -16,10 +16,14 @@ export const WEAPON_DEF = {
   1: { name: 'FISTS', cd: 0.42, melee: true, dmgMin: 12, dmgMax: 26, range: 1.3, cone: 0.55, ammo: null },
   2: { name: 'PISTOL', cd: 0.45, hitscan: true, pellets: 1, dmgMin: 8, dmgMax: 16, spread: 0.014, range: 11, ammo: 'ammoP' },
   3: { name: 'SHOTGUN', cd: 0.95, hitscan: true, pellets: 8, dmgMin: 3, dmgMax: 9, spread: 0.06, range: 7, ammo: 'ammoS' },
-  4: { name: 'PLASMA', cd: 0.30, projectile: true, pellets: 1, dmgMin: 16, dmgMax: 24, spread: 0.02, speed: 9.0, life: 1.5, splash: 1.6, splashDmg: 8, ammo: 'ammoPl' },
+  4: { name: 'PLASMA', cd: 0.30, projectile: true, kindP: 'plasma', pellets: 1, dmgMin: 16, dmgMax: 24, spread: 0.02, speed: 9.0, life: 1.5, splash: 1.6, splashDmg: 8, ammo: 'ammoPl' },
+  5: { name: 'CHAINGUN', cd: 0.10, hitscan: true, pellets: 1, dmgMin: 6, dmgMax: 12, spread: 0.022, ramp: true, range: 10, ammo: 'ammoP' },
+  // rocket: big splash; the blast also hurts the shooter at point-blank
+  // (rocket-jump physics are deliberately absent, the self-damage is not).
+  6: { name: 'ROCKET', cd: 0.90, projectile: true, kindP: 'rocket', pellets: 1, dmgMin: 20, dmgMax: 30, spread: 0, speed: 7.5, life: 2.4, splash: 2.4, splashDmg: 60, splashSelf: true, ammo: 'ammoR' },
 };
 
-export const WEAPON_IDS = [1, 2, 3, 4];
+export const WEAPON_IDS = [1, 2, 3, 4, 5, 6];
 
 const _ray = { perp: 0, side: 0, cellX: 0, cellY: 0, hitId: 0, texX: 0 };
 
@@ -45,12 +49,19 @@ export function updateWeapons(game, dt) {
   if (p.wpnCd > 0) p.wpnCd -= dt;
   if (p.swingT > 0) p.swingT -= dt;
   if (p.switchT > 0) p.switchT -= dt;
-  if (!game.input.fire) { p.latch = false; return; }
+  if (!game.input.fire) { p.latch = false; p.spreadRamp = 0; return; }
   const def = WEAPON_DEF[p.weapon];
   if (p.wpnCd > 0 || (def.melee && p.latch)) return;
   const slot = def.ammo;
   if (slot && p[slot] <= 0) {
-    const next = p.weapon === 3 || p.weapon === 4 ? (p.ammoP > 0 ? 2 : 1) : 1;
+    // Doom-style: advance through the weapon list to the next with ammo;
+    // fists only as a last resort.
+    let next = 1;
+    for (let k = 1; k <= 5; k++) {
+      const w = ((p.weapon - 1 + k) % 6) + 1;
+      const a = WEAPON_DEF[w].ammo;
+      if (a && p[a] > 0) { next = w; break; }
+    }
     switchWeapon(game, next);
     game.setMessage('OUT OF AMMO: ' + WEAPON_DEF[next].name);
     p.latch = false;
@@ -62,12 +73,14 @@ export function updateWeapons(game, dt) {
   p.swingT = def.melee ? 0.25 : 0.18;
   if (def.melee) p.punchParity ^= 1; // alternate fists L/R
   p.flash = 1;
-  game.sfx(p.weapon === 1 ? 'punch' : p.weapon === 2 ? 'pistol' : p.weapon === 3 ? 'shotgun' : 'plasma');
+  game.sfx(def.sfx || WEAPON_SFX[p.weapon]);
   const { gw, gh } = game.map;
   if (def.melee) melee(game, def, gw, gh);
-  else if (def.projectile) plasma(game, def);
+  else if (def.projectile) shootProjectile(game, def);
   else for (let i = 0; i < def.pellets; i++) hitscan(game, def, gw, gh);
 }
+
+const WEAPON_SFX = { 1: 'punch', 2: 'pistol', 3: 'shotgun', 4: 'plasma', 5: 'chaingun', 6: 'rocket' };
 
 function melee(game, def, gw, gh) {
   const p = game.player;
@@ -96,7 +109,9 @@ function melee(game, def, gw, gh) {
 
 function hitscan(game, def, gw, gh) {
   const p = game.player;
-  const a = p.ang + (nextRand(game) * 2 - 1) * def.spread;
+  const spr = def.ramp ? def.spread * (1 + 2.5 * p.spreadRamp) : def.spread;
+  if (def.ramp) p.spreadRamp = Math.min(1, p.spreadRamp + 0.10); // sustained fire opens the cone
+  const a = p.ang + (nextRand(game) * 2 - 1) * spr;
   const ca = Math.cos(a);
   const sa = Math.sin(a);
   if (!castRay(p.x, p.y, ca, sa, game.view, gw, gh, _ray)) return;
@@ -121,7 +136,7 @@ function hitscan(game, def, gw, gh) {
   }
 }
 
-function plasma(game, def) {
+function shootProjectile(game, def) {
   const p = game.player;
   const a = p.ang + (nextRand(game) * 2 - 1) * def.spread;
   const pr = game.projectiles.acquire();
@@ -130,7 +145,7 @@ function plasma(game, def) {
   pr.y = p.y + Math.sin(a) * 0.45;
   pr.vx = Math.cos(a) * def.speed;
   pr.vy = Math.sin(a) * def.speed;
-  pr.kind = 'plasma';
+  pr.kind = def.kindP || 'plasma';
   pr.dmg = dmgRoll(game, def);
   pr.life = def.life;
   pr.owner = 1;

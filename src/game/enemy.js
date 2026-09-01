@@ -57,14 +57,38 @@ export function setupEnemies(game) {
     if (spawn(e.type, e.x, e.y)) kept++;
   }
   if (ratio > 1) {
+    // scatter, don't stack: UV/Nightmare extras land spread across the map's
+    // open ground (away from the player start and from each other), never a
+    // twin glued to an original spawn.
     let extra = Math.round(kept * (ratio - 1));
+    const types = [];
     for (const e of game.map.ents) {
-      if (extra <= 0) break;
-      if (!ENEMY_DEF[e.type] || e.type === 'boss') continue;
-      for (const [ox, oy] of [[0.45, 0], [-0.45, 0], [0, 0.45], [0, -0.45]]) {
-        const nx = e.x + ox, ny = e.y + oy;
-        if (solid[Math.floor(ny) * gw + Math.floor(nx)]) continue; // only open ground
-        if (spawn(e.type, nx, ny)) { extra--; break; }
+      if (e.type !== 'boss' && ENEMY_DEF[e.type] && !types.includes(e.type)) types.push(e.type);
+    }
+    const ps = game.map.player;
+    const occupied = [];
+    for (const e of game.map.ents) if (ENEMY_DEF[e.type]) occupied.push([e.x, e.y]);
+    const cand = [];
+    const { gh } = game.map;
+    for (let cy = 1; cy < gh - 1; cy++) {
+      for (let cx = 1; cx < gw - 1; cx++) {
+        const i = cy * gw + cx;
+        if (solid[i]) continue;
+        const x = cx + 0.5, y = cy + 0.5;
+        if (ps && Math.hypot(x - ps.x, y - ps.y) < 5) continue; // not in your face
+        cand.push([x, y]);
+      }
+    }
+    let ti = 0;
+    for (let pass = 0; pass < 2 && extra > 0 && cand.length; pass++) {
+      const step = pass ? 1 : Math.max(1, Math.ceil(cand.length / extra));
+      for (let ci = 0; ci < cand.length && extra > 0; ci += step) {
+        const [x, y] = cand[ci];
+        if (occupied.some(([ox, oy]) => (ox - x) * (ox - x) + (oy - y) * (oy - y) < 6.25)) continue;
+        if (spawn(types[ti++ % types.length], x, y)) {
+          extra--;
+          occupied.push([x, y]);
+        }
       }
     }
   }

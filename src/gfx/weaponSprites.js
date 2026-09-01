@@ -114,7 +114,37 @@ function paintPlasma(c, fire) {
   blob(c, 84, 34, 5, 5, PULSE);
 }
 
-const PAINT = { 1: paintFist, 2: paintPistol, 3: paintShotgun, 4: paintPlasma };
+function paintChaingun(c, fire) {
+  if (fire) {
+    blob(c, 78, 14, 7, 7, FLASH);
+    blob(c, 78, 14, 4, 4, FLASHC);
+    spike(c, 78, 14, 0, 14, 4, FLASH);
+  }
+  const dy = fire ? -2 : 0;
+  rect(c, 66, 24 + dy, 24, 22, GUN);
+  for (let k = 0; k < 4; k++) rect(c, 68 + k * 5, 24 + dy, 3, 14, GUNDARK); // barrels
+  rect(c, 66, 44 + dy, 24, 8, GUNLIGHT);
+  rect(c, 70, 52, 18, 26, GUNDARK);
+  rect(c, 92, 30, 10, 18, GUN); // ammo feed
+}
+
+function paintRocket(c, fire) {
+  const dy = fire ? -6 : 0;
+  if (fire) {
+    blob(c, 74, 20 + dy, 12, 12, FLASH);
+    blob(c, 74, 20 + dy, 7, 7, FLASHC);
+    spike(c, 74, 12 + dy, -0.6, 20, 6, FLASH);
+    spike(c, 74, 12 + dy, 0.6, 20, 6, FLASH);
+  }
+  rect(c, 48, 22 + dy, 52, 18, GUNDARK); // launch tube
+  rect(c, 48, 22 + dy, 52, 4, GUNLIGHT);
+  blob(c, 50, 31 + dy, 8, 9, GUN); // muzzle
+  rect(c, 86, 26, 14, 12, GUN); // sight box
+  rect(c, 90, 40, 16, 6, WOOD);
+  rect(c, 74, 48, 20, 30, GUNDARK);
+}
+
+const PAINT = { 1: paintFist, 2: paintPistol, 3: paintShotgun, 4: paintPlasma, 5: paintChaingun, 6: paintRocket };
 
 /**
  * Build viewmodel frames for all weapons.

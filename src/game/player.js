@@ -12,7 +12,8 @@ export function createPlayer(x, y, ang = 0) {
   return {
     x, y, ang,
     hp: 100, armor: 0,
-    ammoP: 50, ammoS: 8, ammoPl: 20,
+    ammoP: 50, ammoS: 8, ammoPl: 20, ammoR: 0,
+    spreadRamp: 0, // chaingun: sustained fire widens the cone
     weapon: 2, // 1 fists, 2 pistol, 3 shotgun, 4 plasma
     keyR: false, keyB: false,
     bob: 0, moved: false, running: false,

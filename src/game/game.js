@@ -277,7 +277,31 @@ export class Game {
     s.x = x; s.y = y; s.vol = vol;
   }
 
+  /** Rocket blast: splash to enemies (+ player if the shooter stands too close). */
+  explodeRocket(pr) {
+    this.sfx('boom', pr.x, pr.y);
+    this.addSplatDecalAt(pr);
+    this.spawnBlood(pr.x, pr.y, 6, 0, 6);
+    const sd = pr.splashDmg || 60;
+    const SP = 2.4 * 2.4;
+    for (let i = 0; i < this.enemyCount; i++) {
+      const e2 = this.enemies[i];
+      if (e2.state === 5 || e2.state === 6) continue;
+      const dx = e2.x - pr.x, dy = e2.y - pr.y;
+      if (dx * dx + dy * dy < SP) {
+        damageEnemy(this, e2, Math.round(sd * damageFalloff(Math.hypot(dx, dy), 2.4)));
+        this.spawnBlood(e2.x, e2.y, 6, Math.atan2(dy, dx), 4);
+      }
+    }
+    if (pr.owner === 1) {
+      const p = this.player;
+      const pd = Math.hypot(p.x - pr.x, p.y - pr.y);
+      if (pd < 2.4) this.hurtPlayer(Math.round(sd * damageFalloff(pd, 2.4)), pr.x, pr.y);
+    }
+  }
+
   onProjectileWall(pr) {
+    if (pr.owner === 1 && pr.kind === 'rocket') this.explodeRocket(pr);
     this.emitSound(pr.x, pr.y, 2.5); // wall splat sound
     if (pr.owner === 1 && pr.kind === 'plasma') this.addSplatDecalAt(pr);
     else if (pr.owner === 0 && pr.kind === 'fire') {
@@ -290,6 +314,7 @@ export class Game {
   }
 
   onProjectileHitEnemy(pr, e) {
+    if (pr.kind === 'rocket') this.explodeRocket(pr);
     if (pr.dmg) {
       damageEnemy(this, e, pr.dmg);
       this.spawnBlood(e.x, e.y, 8, Math.atan2(-pr.vy, -pr.vx), Math.hypot(pr.vx, pr.vy) * 0.5);
@@ -328,7 +353,9 @@ export class Game {
     L.length = 0;
     if (p.flash > 0.25) L.push({ x: p.x, y: p.y, r: 6.5, i: p.flash * 12 });
     this.projectiles.each((pr) => {
-      if (pr.active && pr.kind === 'plasma' && L.length < 8) L.push({ x: pr.x, y: pr.y, r: 4.0, i: 10 });
+      if (pr.active && (pr.kind === 'plasma' || pr.kind === 'rocket') && L.length < 8) {
+        L.push({ x: pr.x, y: pr.y, r: pr.kind === 'rocket' ? 4.5 : 4.0, i: 10 });
+      }
     });
     this.renderer.lights = this.state === 'PLAY' ? L : null;
     this.renderer.render(
@@ -385,7 +412,7 @@ export class Game {
       const g2 = this.glows[pr.kind === 'bolt' ? 'bolt' : 'fire'];
       const d = camDepth(p.x, p.y, cosA, sinA, pr.x, pr.y);
       if (d < 0.25) return;
-      sr.add(pr.x, pr.y, 0.28, g2.tab, g2.w, g2.h, 0.25, 31);
+      sr.add(pr.x, pr.y, pr.kind === 'rocket' ? 0.36 : 0.28, g2.tab, g2.w, g2.h, 0.25, 31);
     });
     sr.render(this.renderer.buf, this.renderer.depth, this.W, this.H);
   }

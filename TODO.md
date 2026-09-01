@@ -34,7 +34,7 @@ Procedencia: la BASE (v1.0.0, motor + 3 niveles + QA, 45.8h) la construyó
       (backlog CHANGELOG:195)
 - [x] **3. Luces dinámicas + gibs** → v1.4.0: ✅ pool ≤8 luces puntuales
       (fogonazo/plasma/explosión) en el renderer; gibs al morir
-- [ ] **4. Cohete + ametralladora** → v1.5.0: proyectil con splash (daña al
+- [x] **4. Cohete + ametralladora** → v1.5.0: ✅ proyectil con splash (daña al
       jugador cerca), chaingun con spread creciente; sprites + sonidos
 - [ ] **5. Enemigos nuevos** → v1.6.0: Lost Soul (melee veloz), Baron (duro,
       doble bolt), Pain Elemental (spawn imps, respeta ENEMY_MAX=48)
