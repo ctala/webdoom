@@ -44,8 +44,16 @@ queda intacta y trazable: lo nuevo lleva prefijo `flash:` en git, tag
   no se mata al jefe de lejos con la pistola), THE WARDEN persigue (450→
   550 hp) y **4 dificultades** seleccionables en el título con ←/→.
 - **v1.2.0** — La dificultad también cambia la **cantidad de bichos**
-  (ITYTD ralea spawns; Nightmare duplica) y se puede cambiar tras morir
-  (teclas 1-4 o ←/→ en YOU DIED). Selector visible en el menú.
+  (ITYTD ralea spawns; Nightmare esparce extras por el mapa) y se puede
+  cambiar tras morir (teclas 1-4 o ←/→ en YOU DIED). Selector visible.
+- **v1.3.0** — Game feel: screen shake, viñeta roja, patada del
+  viewmodel, audio posicional (StereoPanner) y fix de los puños.
+- **v1.4.0** — Luces dinámicas (fogonazo y proyectiles iluminan paredes)
+  y gibs con golpes fuertes.
+- **v1.5.0** — **Lanzacohetes** (splash, autodaño a bocajarro) y
+  **ametralladora** (spread creciente); teclas 5/6, cajas de cohetes en
+  E2M1. La dificultad dura esparce bichos extra por el mapa (no gemelos
+  pegados).
 
 ## Ejecutar
 
@@ -74,7 +82,7 @@ interfiere (solo expone un handle extra).
 | W/A/S/D (o flech.)| mover / strafear                          |
 | Ratón            | apuntar (pointer lock)                    |
 | Click izq. / Espacio | disparar                               |
-| 1 / 2 / 3 / 4 (o rueda) | puños / pistola / escopeta / plasma |
+| 1 / 2 / 3 / 4 / 5 / 6 (o rueda) | puños / pistola / escopeta / plasma / ametralladora / cohete |
 | E o U            | usar: abrir puertas, secretos, salida     |
 | TAB (mantener)   | automapa                                  |
 | SHIFT            | correr                                    |
